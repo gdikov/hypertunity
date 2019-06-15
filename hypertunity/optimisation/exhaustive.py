@@ -4,12 +4,12 @@
 
 from .base_optimiser import BaseOptimiser
 
-from ..utils import support_american_style
+from ..utils import support_american_spelling
 
 
 class GridSearch(BaseOptimiser):
 
-    @support_american_style
+    @support_american_spelling
     def __init__(self, minimise):
         super(GridSearch, self).__init__(minimise=minimise)
 

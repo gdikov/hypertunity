@@ -2,7 +2,7 @@
 """Defines the API of every optimiser and implements common logic.
 """
 
-from ..utils import support_american_style
+from ..utils import support_american_spelling
 
 
 class BaseOptimiser:
@@ -13,7 +13,7 @@ class BaseOptimiser:
     proposes values from its domain, evaluation history can be supplied via the `update` method.
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
-    @support_american_style
+    @support_american_spelling
     def __init__(self, domain, minimise=True):
         self.domain = domain
         self.minimise = minimise
@@ -26,3 +26,6 @@ class BaseOptimiser:
 
     def reset(self):
         raise NotImplementedError
+
+
+BaseOptimizer = BaseOptimiser
