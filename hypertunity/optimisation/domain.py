@@ -39,6 +39,11 @@ class Domain:
         else:
             raise TypeError(f"A 'Domain' object can be created from a Python dict or str objects only. "
                             f"Unknown type {type(dct)} for initialisation.")
+
+        if not self._validate():
+            raise ValueError("Bad domain specification. Keys must be of type string and values must be "
+                             "either of a tuple, list or dict type.")
+
         self._is_continuous = False
         for _, val in _deepiter_dict(self._data):
             if isinstance(val, list):
@@ -50,6 +55,14 @@ class Domain:
 
     def __eq__(self, other):
         return self.as_dict() == other.as_dict()
+
+    def _validate(self):
+        """Check for invalid domain specifications.
+        """
+        for keys, values in _deepiter_dict(self._data):
+            if not (all(map(lambda x: isinstance(x, str), keys)) and isinstance(values, (tuple, list, dict))):
+                return False
+        return True
 
     @property
     def is_continuous(self):

@@ -1,7 +1,26 @@
+# -*- coding: utf-8 -*-
+
+import pytest
 
 from collections import namedtuple
 
 from ..domain import Domain
+
+
+def test_valid():
+    with pytest.raises(TypeError):
+        Domain({{"b": lambda x: x}, [0, 0.1]})
+    with pytest.raises(ValueError):
+        Domain({1: {"b": [2, 3]}, "c": [0, 0.1]})
+    with pytest.raises(ValueError):
+        Domain({"a": {"b": {1, 2, 3, 4}}, "c": [0, 0.1]})
+    with pytest.raises(ValueError):
+        Domain({"a": {"b": lambda x: x}, "c": [0, 0.1]})
+    with pytest.raises(ValueError):
+        # this one should fail from the ast.literal_eval parsing
+        Domain('{"a": {"b": lambda x: x}, "c": [0, 0.1]}')
+    Domain({"a": {"b": [0, 1]}, "c": [0, 0.1]})
+    Domain('{"a": {"b": [0, 1]}, "c": [0, 0.1]}')
 
 
 def test_eq():
