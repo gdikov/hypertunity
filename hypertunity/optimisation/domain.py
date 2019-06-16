@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Define the optimisation domain and a sample of it.
+"""Define the optimisation domain as a tweaked Python dictionary.
 """
 
 import ast
-import pickle
+import copy
+import random
 import os
+import pickle
 
 from collections import namedtuple
 
@@ -45,16 +47,55 @@ class Domain:
                              "either of a tuple, list or dict type.")
 
         self._is_continuous = False
+        self._ndim = 0
         for _, val in _deepiter_dict(self._data):
             if isinstance(val, list):
                 self._is_continuous = True
-                break
+            self._ndim += 1
 
     def __iter__(self):
-        raise NotImplementedError
+        """For discrete domains iterate over the Cartesian product of all 1-dim subdomains.
+
+        Raises:
+            DomainNotIterableError in case of a continuous domain.
+
+        Notes:
+            All dimensions must be discrete (numeric or categorical).
+            Even if one dimension is continuous the iteration will raise an error.
+        """
+        if self._is_continuous:
+            raise DomainNotIterableError("The domain has a continuous subdomain and cannot be iterated.")
+
+        def cartesian_walk(dct):
+            if dct:
+                key, vals = dct.popitem()
+                if isinstance(vals, tuple):
+                    for v in vals:
+                        yield from (dict(**rem, **{key: v}) for rem in cartesian_walk(copy.deepcopy(dct)))
+                elif isinstance(vals, dict):
+                    for sub_v in cartesian_walk(copy.deepcopy(vals)):
+                        yield from (dict(**rem, **{key: sub_v}) for rem in cartesian_walk(copy.deepcopy(dct)))
+                else:
+                    raise TypeError(f"Unexpected subdomain of type {type(vals)}.")
+            else:
+                yield {}
+
+        yield from cartesian_walk(copy.deepcopy(self._data))
 
     def __eq__(self, other):
+        """Compare all subdomains for equal bounds and sets. Order of subdomains is not important.
+        """
         return self.as_dict() == other.as_dict()
+
+    def __len__(self):
+        """Compute the dimensionality of the domain.
+        """
+        return self._ndim
+
+    def __getitem__(self, item):
+        """Return the item (possibly subdomain) for a given key.
+        """
+        return self._data.__getitem__(item)
 
     def _validate(self):
         """Check for invalid domain specifications.
@@ -63,6 +104,22 @@ class Domain:
             if not (all(map(lambda x: isinstance(x, str), keys)) and isinstance(values, (tuple, list, dict))):
                 return False
         return True
+
+    def sample(self):
+        """Draw a sample from the domain. All subdomains are sampled uniformly.
+        """
+        def sample_dict(dct):
+            sample = {}
+            for key, vals in dct.items():
+                if isinstance(vals, tuple):
+                    sample[key] = random.choice(vals)
+                elif isinstance(vals, list):
+                    sample[key] = random.uniform(*vals)
+                else:
+                    sample[key] = sample_dict(vals)
+            return sample
+
+        return sample_dict(self._data)
 
     @property
     def is_continuous(self):
@@ -133,6 +190,19 @@ class Domain:
 
 
 def _deepiter_dict(dct):
+    """Iterate over all key, value pairs of a (possibly nested) dictionary. In this case, all keys of the
+    nested dicts are summarised in a tuple.
+
+    Args:
+        dct: dict object to iterate.
+
+    Yields:
+        Tuple of keys (itself a tuple) and the corresponding value.
+
+    Examples:
+        >>> list(_deepiter_dict({"a": {"b": 1, "c": 2}, "d": 3}))
+        >>> [(('a', 'b'), 1), (('a', 'c'), 2), (('d',), 3)]
+    """
     def chained_keys_iter(prefix_keys, dct_tmp):
         for key, val in dct_tmp.items():
             chained_keys = prefix_keys + (key,)
@@ -142,3 +212,7 @@ def _deepiter_dict(dct):
                 yield chained_keys, val
 
     yield from chained_keys_iter((), dct)
+
+
+class DomainNotIterableError(Exception):
+    pass
