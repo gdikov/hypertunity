@@ -1,0 +1,35 @@
+# Python CircleCI 2.0 configuration file
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.7.3
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - env-build
+
+      - run:
+          name: setup env
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          paths:
+            - ./venv
+          key: env-build
+
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            py.test --verbose hypertunity
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
