@@ -2,7 +2,7 @@
 """Optimisation by exhaustive search, e.g. regular grid or list search.
 """
 
-from .base_optimiser import BaseOptimiser
+from .base import BaseOptimiser
 
 from ..utils import support_american_spelling
 

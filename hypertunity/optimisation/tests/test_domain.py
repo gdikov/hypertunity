@@ -29,6 +29,11 @@ def test_eq():
     assert d1 == d2
 
 
+def test_flatten():
+    dom = Domain({"a": {"b": [0, 1]}, "c": [0, 0.1]})
+    assert dom.flatten() == {("a", "b"): [0, 1], ("c",): [0, 0.1]}
+
+
 def test_serialisation():
     domain = Domain({"a": [1, 2], "b": {"c": (1, 2, 3), "d": ("o1", "o2")}})
     serialised = domain.serialise()
