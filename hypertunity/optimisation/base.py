@@ -31,15 +31,13 @@ class BaseOptimiser:
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
     @support_american_spelling
-    def __init__(self, domain: Domain, minimise: bool = True):
+    def __init__(self, domain: Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
         Args:
             domain: `Domain`, the objective function's optimisation domain.
-            minimise: bool, whether the objective should be maximised or minimised.
         """
         self.domain = domain
-        self.minimise = minimise
         self._history: List[HistoryPoint] = []
 
     @property
@@ -48,7 +46,7 @@ class BaseOptimiser:
         return self._history
 
     @abc.abstractmethod
-    def run_step(self, *args, **kwargs) -> Sample:
+    def run_step(self, *args, **kwargs) -> List[Sample]:
         """Perform one step of optimisation and suggest the next sample to evaluate.
 
         Args:
@@ -56,7 +54,8 @@ class BaseOptimiser:
             **kwargs: optional keyword arguments for the Optimiser.
 
         Returns:
-            A `Sample` type object corresponding to the `self.domain` domain with a suggested location to evaluate.
+            A list of `Sample` type objects corresponding to the `self.domain` domain with
+            suggested locations to evaluate. Can be more than one if the optimiser supports batched sampling.
         """
         raise NotImplementedError
 

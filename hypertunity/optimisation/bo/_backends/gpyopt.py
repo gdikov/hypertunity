@@ -40,8 +40,12 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
              No objective function is specified for the `GPyOpt.methods.BayesianOptimisation` object as the evaluation
              is deferred to the user.
         """
-        super(GPyOptBackend, self).__init__(domain, minimise=minimise)
+        np.random.seed(seed)
+        domain = ht_opt.Domain(domain.as_dict(), seed=seed)
+        super(GPyOptBackend, self).__init__(domain)
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
+        self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
+                                              for name, mapping in self._categorical_value_mapper.items()}
         self._minimise = minimise
         self._batch_size = batch_size
         self._num_cores = min(self._batch_size, cpu_count() - 1)
@@ -53,7 +57,6 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         self.__is_empty_data = True
         self._data_x = np.array([[]])
         self._data_fx = np.array([[]])
-        np.random.seed(seed)
 
     @staticmethod
     def _convert_to_gpyopt_domain(orig_domain: ht_opt.Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
@@ -83,6 +86,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
             elif domain_type == ht_opt.Domain.Categorical:
                 dim_type = GPyOptBackend.CATEGORICAL_TYPE
                 value_mapper[dim_name] = {v: i for i, v in enumerate(vals)}
+                vals = tuple(range(len(vals)))
             else:
                 raise ValueError(f"Badly specified subdomain {names} with values {vals}.")
             gpyopt_domain.append({"name": dim_name, "type": dim_type, "domain": tuple(vals)})
@@ -133,7 +137,10 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
             for name in names[:-1]:
                 sub_dim[name] = {}
                 sub_dim = sub_dim[name]
-            sub_dim[names[-1]] = value
+            if dim["type"] == GPyOptBackend.CATEGORICAL_TYPE:
+                sub_dim[names[-1]] = self._inv_categorical_value_mapper[dim["name"]][value]
+            else:
+                sub_dim[names[-1]] = value
         return ht_opt.Sample(orig_sample)
 
     def _build_model(self):
@@ -152,17 +159,17 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         """Build the acquisition function."""
         return "EI"
 
-    def run_step(self, *args, **kwargs):
+    def run_step(self, *args, **kwargs) -> List[ht_opt.Sample]:
         """Run one step of Bayesian optimisation with a GP regression surrogate model.
 
         The first sample of the domain is chosen at random. Only after the model has been updated with at least one
         (data point, evaluation score)-pair the GPs are built and the acquisition function computed and optimised.
 
         Returns:
-            A `Sample` from the domain at which the objective should be evaluated next.
+            A list of `self.batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
         """
         if self.__is_empty_data:
-            next_samples = tuple([self.domain.sample() for _ in range(self._batch_size)])
+            next_samples = [self.domain.sample() for _ in range(self._batch_size)]
         else:
             assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise a BO method from empty data."
             # NOTE: as of GPyOpt 1.2.5 adding new data to an existing model is not yet possible,
@@ -183,9 +190,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
                 de_duplication=True,
                 **self._backend_kwargs)
             gpyopt_samples = bo.suggest_next_locations()
-            next_samples = tuple([self._convert_from_gpyopt_sample(s) for s in gpyopt_samples])
-        if self._batch_size == 1:
-            return next_samples[0]
+            next_samples = [self._convert_from_gpyopt_sample(s) for s in gpyopt_samples]
         return next_samples
 
     def update(self, x, fx):
