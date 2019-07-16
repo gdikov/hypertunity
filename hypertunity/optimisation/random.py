@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import List, Iterable
+from typing import List, Tuple
 
 import hypertunity.optimisation as ht_opt
 
@@ -37,9 +37,9 @@ class RandomSearch(ht_opt.BaseOptimiser):
             fx: `EvaluationScore`, the evaluation score of the objective at `x`
         """
         if isinstance(x, ht_opt.Sample) and isinstance(fx, ht_opt.EvaluationScore):
-            self.history.append(ht_opt.HistoryPoint(x, fx))
-        elif isinstance(x, Iterable) and isinstance(fx, Iterable) and len(x) == len(fx):
-            self.history.extend([ht_opt.HistoryPoint(sample=i, score=j) for i, j in zip(x, fx)])
+            self.history.append(ht_opt.HistoryPoint(sample=x, metrics={"score": fx}))
+        elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
+            self.history.extend([ht_opt.HistoryPoint(sample=i, metrics=j) for i, j in zip(x, fx)])
         else:
             raise ValueError("Update values for `x` and `f(x)` must be either "
                              "`Sample` and `EvaluationScore` or a list thereof.")

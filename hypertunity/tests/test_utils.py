@@ -1,3 +1,5 @@
+import pytest
+
 from .. import utils
 
 
@@ -8,3 +10,11 @@ def test_support_american_spelling():
 
     assert gb_spelling_func(minimise=True, optimise=1, maximise=None) == (True, 1, None)
     assert gb_spelling_func(minimize=True, optimize=1, maximize=None) == (True, 1, None)
+
+
+def test_split_and_join_strings():
+    strings = [("vxc", "", "", "___"), ("_", "_", ""), ("asd",), ("asd", "dxcv")]
+    for s in strings:
+        assert s == utils.split_string(utils.join_strings(s, join_char="_"), split_char="_")
+    with pytest.raises(ValueError):
+        utils.join_strings(["asd", "\\", "\n"])

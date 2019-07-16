@@ -3,23 +3,27 @@
 
 import abc
 
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 
 from hypertunity.optimisation.domain import Sample, Domain
-from ..utils import support_american_spelling
+from hypertunity.utils import support_american_spelling
 
 
 @dataclass
 class EvaluationScore:
+    """A tuple of the evaluation value of the objective and a variance if known."""
     value: float
     variance: float = 0.0
 
 
 @dataclass
 class HistoryPoint:
+    """A tuple of a `Sample` at which the objective has been evaluated and the corresponding metrics.
+    The latter is a mapping of a metric name to an `EvaluationScore`.
+    """
     sample: Sample
-    score: EvaluationScore
+    metrics: Dict[str, EvaluationScore]
 
 
 class BaseOptimiser:
@@ -64,7 +68,7 @@ class BaseOptimiser:
         """Update the optimiser history with a pair of a sample and evaluation score or other data.
 
         Args:
-            *args: optional, data supplied to the optimiser from outside such as evaluation scores.
+            *args: optional, data supplied to the optimiser from outside such as evaluation information.
             **kwargs: optional, additional options for the update procedure.
         """
         raise NotImplementedError

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import List, Dict, Tuple, TypeVar, Any, Iterable
+from typing import List, Dict, Tuple, TypeVar, Any
 
 import GPyOpt
 import numpy as np
@@ -77,7 +77,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         value_mapper = {}
         flat_domain = orig_domain.flatten()
         for names, vals in flat_domain.items():
-            dim_name = _clean_and_join(names)
+            dim_name = utils.join_strings(names)
             domain_type = ht_opt.Domain.get_type(vals)
             if domain_type == ht_opt.Domain.Continuous:
                 dim_type = GPyOptBackend.CONTINUOUS_TYPE
@@ -108,7 +108,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         gpyopt_sample = []
         # iterate in the order of the GPyOpt domain names
         for dim in self.gpyopt_domain:
-            keys = _revert_clean_and_join(dim["name"])
+            keys = utils.split_string(dim["name"])
             val = orig_sample[keys]
             if dim["type"] == GPyOptBackend.CATEGORICAL_TYPE:
                 val = self._categorical_value_mapper[dim["name"]][val]
@@ -132,7 +132,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
                              f"sample {len(gpyopt_sample)} dimensions.")
         orig_sample = {}
         for dim, value in zip(self.gpyopt_domain, gpyopt_sample):
-            names = _revert_clean_and_join(dim["name"])
+            names = utils.split_string(dim["name"])
             sub_dim = orig_sample
             for name in names[:-1]:
                 sub_dim[name] = {}
@@ -193,22 +193,34 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
             next_samples = [self._convert_from_gpyopt_sample(s) for s in gpyopt_samples]
         return next_samples
 
+    def _update_one(self, x, fx):
+        if isinstance(fx, ht_opt.EvaluationScore):
+            self.history.append(ht_opt.HistoryPoint(sample=x, metrics={"score": fx}))
+            array_fx = np.array([[fx.value]])
+        elif isinstance(fx, Dict):
+            assert len(fx) == 1, "Currently only evaluations with a single metric are supported."
+            self.history.append(ht_opt.HistoryPoint(sample=x, metrics=fx))
+            array_fx = np.array([[list(fx.values())[0].value]])
+        else:
+            raise TypeError("Cannot update history for one sample and multiple evaluations. "
+                            "Use batched update instead and provide a list of samples and a list of evaluation metrics")
+        converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
+        return converted_x, array_fx
+
     def update(self, x, fx):
         """Update the surrogate model with the domain sample `x` and the function evaluation `fx`.
 
         Args:
             x: `Sample`, one sample of the domain of the objective function.
-            fx: `EvaluationScore`, the evaluation score of the objective at `x`
+            fx: either an `EvaluationScore` or a dict, mapping of metric names to `EvaluationScore`s
+                of the objective at `x`.
         """
         # both `converted_x` and `array_fx` must be 2dim arrays
-        if isinstance(x, ht_opt.Sample) and isinstance(fx, ht_opt.EvaluationScore):
-            self.history.append(ht_opt.HistoryPoint(x, fx))
-            converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
-            array_fx = np.array([[fx.value]])
-        elif isinstance(x, Iterable) and isinstance(fx, Iterable) and len(x) == len(fx):
-            self.history.extend([ht_opt.HistoryPoint(sample=i, score=j) for i, j in zip(x, fx)])
-            converted_x = np.array([self._convert_to_gpyopt_sample(s) for s in x])
-            array_fx = np.array([f.value for f in fx]).reshape(-1, 1)
+        if isinstance(x, ht_opt.Sample):
+            converted_x, array_fx = self._update_one(x, fx)
+        elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
+            # append each history point to the tracked history and convert to numpy arrays
+            converted_x, array_fx = map(np.concatenate, zip(*[self._update_one(i, j) for i, j in zip(x, fx)]))
         else:
             raise ValueError("Update values for `x` and `f(x)` must be either "
                              "`Sample` and `EvaluationScore` or a list thereof.")
@@ -227,56 +239,3 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         self._data_x = np.array([])
         self._data_fx = np.array([])
         self.__is_empty_data = True
-
-
-def _clean_and_join(strings):
-    """Join list of strings with an underscore.
-
-    The strings must contain string.printable characters only, otherwise an exception is raised.
-    If one of the strings has already an underscore, it will be replace by a null character.
-
-    Args:
-        strings: iterable of strings
-
-    Returns:
-        The joined string with an underscore character.
-
-    Examples:
-    ```python
-        >>> _clean_and_join(['asd', '', '_xcv__'])
-        'asd__\x00\x00xcv\x00'
-    ```
-
-    Raises:
-        ValueError if a string contains an unprintable character.
-    """
-    all_cleaned = []
-    for s in strings:
-        if not s.isprintable():
-            raise ValueError("Encountered unexpected name containing non-printable characters.")
-        all_cleaned.append(s.replace("_", "\0"))
-    return "_".join(all_cleaned)
-
-
-def _revert_clean_and_join(joined):
-    """Split joined string and substitute back the null characters with an underscore if necessary.
-
-    Inverse function of `_clean_and_join(strings)`.
-
-    Args:
-        joined: str, the joined representation of the substrings.
-
-    Returns:
-        A tuple of strings with the splitting character (underscore) removed.
-
-    Examples:
-    ```python
-        >>> _revert_clean_and_join('asd__\x00\x00xcv\x00')
-        ('asd', '', '_xcv__')
-    ```
-    """
-    strings = joined.split("_")
-    strings_copy = []
-    for s in strings:
-        strings_copy.append(s.replace("\0", "_"))
-    return tuple(strings_copy)

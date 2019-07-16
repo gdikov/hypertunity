@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from hypertunity.optimisation.domain import Domain
-from ..bo import BayesianOptimization
+import pytest
+
+from hypertunity.optimisation import Domain, BayesianOptimization
 from . import _common as test_utils
 
 
+@pytest.mark.slow
 def test_gpyopt_bo_simple_continuous():
     domain = Domain({"x": [-1., 6.]})
     bo = BayesianOptimization(
@@ -15,6 +17,7 @@ def test_gpyopt_bo_simple_continuous():
     test_utils.evaluate_simple_continuous(bo, n_steps=7)
 
 
+@pytest.mark.slow
 def test_bo_simple_mixed():
     domain = Domain({"x": [-5., 6.], "y": ("sin", "sqr"), "z": tuple(range(4))})
     bo = BayesianOptimization(

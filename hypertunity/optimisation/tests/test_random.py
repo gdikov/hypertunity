@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from hypertunity.optimisation.domain import Domain
-from ..random import RandomSearch
+from hypertunity.optimisation import Domain, RandomSearch
 from . import _common as test_utils
 
 

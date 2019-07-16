@@ -45,7 +45,7 @@ coverage.xml
 .ipynb_checkpoints
 
 # Environments
-.venv
+.venv*
 
 # Pycharm project settings
 .idea

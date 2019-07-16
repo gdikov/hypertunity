@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import pytest
-
 import numpy as np
 
-from hypertunity.optimisation.domain import Domain
-from hypertunity.optimisation.base import EvaluationScore
+from hypertunity.optimisation import Domain, EvaluationScore
 from .. import gpyopt
 
 
@@ -30,11 +27,3 @@ def test_gpyopt_bo_reset():
         bo.update(samples[0], EvaluationScore(2. * i))
     bo.reset()
     assert len(bo.history) == 0
-
-
-def test_clean_and_join_and_revert():
-    strings = [("vxc", "", "", "___"), ("_", "_", ""), ("asd",), ("asd", "dxcv")]
-    for s in strings:
-        assert s == gpyopt._revert_clean_and_join(gpyopt._clean_and_join(s))
-    with pytest.raises(ValueError):
-        gpyopt._clean_and_join(["asd", "\\", "\n"])
