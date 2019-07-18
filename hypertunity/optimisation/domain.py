@@ -7,12 +7,14 @@ import random
 import os
 import pickle
 
+from typing import Tuple
 from collections import namedtuple
 
 
 __all__ = [
     "Domain",
     "DomainNotIterableError",
+    "split_domain_by_type",
     "Sample"
 ]
 
@@ -61,6 +63,28 @@ class _RecursiveDict:
                 sub_dict = sub_dict[it]
             return sub_dict
 
+    def __add__(self, other: '_RecursiveDict'):
+        """Merge self with the `other` RecursiveDict.
+
+        Args:
+            other: `_RecursiveDict`, the dict that will be merged into the current one.
+
+        Returns:
+            A new `_RecursiveDict` object consisting of the subdomains of both domains.
+            If the keys overlap and the subdomains are discrete or categorical, the values will be unified.
+
+        Raises:
+            `ValueError` if same keys point to different values.
+        """
+        flattened_a = self.flatten()
+        flattened_b = other.flatten()
+        # validate that the two _RecursiveDicts are disjoint
+        if len(flattened_a.keys()) > len(flattened_a.keys() - flattened_b.keys()):
+            raise ValueError(f"Ambiguous addition of {self.__class__.__name__} objects.")
+        merged = list(flattened_a.items())
+        merged.extend(list(flattened_b.items()))
+        return self.__class__.from_list(merged)
+
     def flatten(self):
         """Return the flattened version of the recursive dict, i.e. without nested dicts.
 
@@ -73,6 +97,41 @@ class _RecursiveDict:
         """Convert the recursive dict object from a `RecursiveDict` to Python dict type.
         """
         return copy.deepcopy(self._data)
+
+    @classmethod
+    def from_list(cls, lst):
+        """Create a `_RecursiveDict` object from a list of tuples.
+
+        Args:
+            lst: list of tuples, each element is a pair of keys (tuple of strings) and the value.
+
+        Returns:
+            A `_RecursiveDict` object.
+
+        Raises:
+            `ValueError` if the list contains duplicating keys with different values.
+
+        Examples:
+        ```python
+            >>> lst = [(("a", "b"), (2, 3, 4)), (("c",), [0, 0.1])]
+            >>> _RecursiveDict.from_list(lst)
+            {"a": {"b": (2, 3, 4)}, "c": [0, 0.1]}
+        ```
+        """
+        dct = {}
+        head = dct
+        for keys, vals in lst:
+            if not keys:
+                continue
+            for k in keys[:-1]:
+                if k not in dct:
+                    dct[k] = {}
+                dct = dct[k]
+            if keys[-1] in dct and dct[keys[-1]] == vals:
+                raise ValueError(f"Duplicating entries for keys {keys}.")
+            dct[keys[-1]] = vals
+            dct = head
+        return cls(head)
 
     def serialise(self, filepath=None):
         """Serialise the `_RecursiveDict` object to a file or a string (if `filepath` is not supplied)
@@ -205,7 +264,7 @@ class Domain(_RecursiveDict):
             else:
                 yield {}
 
-        yield from cartesian_walk(copy.deepcopy(self._data))
+        yield from map(Sample, cartesian_walk(copy.deepcopy(self._data)))
 
     def _validate(self):
         """Check for invalid domain specifications."""
@@ -261,6 +320,21 @@ class Domain(_RecursiveDict):
 
 class DomainNotIterableError(Exception):
     pass
+
+
+def split_domain_by_type(domain) -> Tuple[Domain, Domain, Domain]:
+    """Split the domain into discrete, categorical and continuous subdomains respectively."""
+    discrete, categorical, continuous = [], [], []
+    for keys, vals in domain.flatten().items():
+        if Domain.get_type(vals) == Domain.Continuous:
+            continuous.append((keys, vals))
+        elif Domain.get_type(vals) == Domain.Categorical:
+            categorical.append((keys, vals))
+        elif Domain.get_type(vals) == Domain.Discrete:
+            discrete.append((keys, vals))
+        else:
+            raise ValueError("Encountered an invalid subdomain.")
+    return Domain.from_list(discrete), Domain.from_list(categorical), Domain.from_list(continuous)
 
 
 class Sample(_RecursiveDict):

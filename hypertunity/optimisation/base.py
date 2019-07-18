@@ -3,11 +3,10 @@
 
 import abc
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from dataclasses import dataclass
 
 from hypertunity.optimisation.domain import Sample, Domain
-from hypertunity.utils import support_american_spelling
 
 
 @dataclass
@@ -34,7 +33,6 @@ class BaseOptimiser:
     proposes values from its domain, evaluation history can be supplied via the `update` method.
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
-    @support_american_spelling
     def __init__(self, domain: Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
@@ -63,15 +61,20 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def update(self, *args, **kwargs):
-        """Update the optimiser history with a pair of a sample and evaluation score or other data.
+    def update(self, x, fx, **kwargs):
+        """Update the optimiser's history track.
 
         Args:
-            *args: optional, data supplied to the optimiser from outside such as evaluation information.
-            **kwargs: optional, additional options for the update procedure.
+            x: `Sample`, one sample of the domain of the objective function.
+            fx: `EvaluationScore`, the evaluation score of the objective at `x`
         """
-        raise NotImplementedError
+        if isinstance(x, Sample) and isinstance(fx, EvaluationScore):
+            self.history.append(HistoryPoint(sample=x, metrics={"score": fx}))
+        elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
+            self.history.extend([HistoryPoint(sample=i, metrics=j) for i, j in zip(x, fx)])
+        else:
+            raise ValueError("Update values for `x` and `f(x)` must be either "
+                             "`Sample` and `EvaluationScore` or a list thereof.")
 
     def reset(self):
         """Reset the optimiser to the initial state."""
