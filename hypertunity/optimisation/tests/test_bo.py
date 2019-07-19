@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from hypertunity.optimisation import Domain, BayesianOptimization
+from hypertunity.optimisation.bo import BayesianOptimization
+from hypertunity.optimisation.domain import Domain
 from . import _common as test_utils
 
 

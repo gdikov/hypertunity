@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-import hypertunity.optimisation as ht_opt
+from hypertunity.optimisation import domain as opt
+from hypertunity.optimisation.base import BaseOptimiser
 
 
-class RandomSearch(ht_opt.BaseOptimiser):
+class RandomSearch(BaseOptimiser):
     def __init__(self, domain, batch_size=1, seed=None):
         """Initialise the RandomSearch.
 
@@ -17,10 +18,10 @@ class RandomSearch(ht_opt.BaseOptimiser):
             seed: optional, int to seed the domain.
         """
         if seed is not None:
-            domain = ht_opt.Domain(domain.as_dict(), seed=seed)
+            domain = opt.Domain(domain.as_dict(), seed=seed)
         super(RandomSearch, self).__init__(domain)
         self._batch_size = batch_size
 
-    def run_step(self) -> List[ht_opt.Sample]:
+    def run_step(self) -> List[opt.Sample]:
         """Sample uniformly the domain `self.batch_size` number of times."""
         return [self.domain.sample() for _ in range(self._batch_size)]

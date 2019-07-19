@@ -11,7 +11,8 @@ except ImportError as err:
     raise ImportError("Install TensorFlow>=1.14 and tensorboard>=1.14 "
                       "to support the HParams plugin.") from err
 
-import hypertunity.optimisation as ht_opt
+from hypertunity.optimisation import base
+from hypertunity.optimisation import domain as opt
 from hypertunity import utils
 
 
@@ -37,7 +38,7 @@ class TensorboardReporter:
 
     The user is responsible for launching TensorBoard.
     """
-    def __init__(self, domain: ht_opt.Domain, metrics: List[str], logdir: str):
+    def __init__(self, domain: opt.Domain, metrics: List[str], logdir: str):
         self._hparams_domain = self._convert_to_hparams_domain(domain)
         self._metrics_names = metrics
         if not os.path.exists(logdir):
@@ -49,15 +50,15 @@ class TensorboardReporter:
               f"the visualisation in TensorBoard", file=sys.stderr)
 
     @staticmethod
-    def _convert_to_hparams_domain(domain: ht_opt.Domain) -> Dict[str, hp.HParam]:
+    def _convert_to_hparams_domain(domain: opt.Domain) -> Dict[str, hp.HParam]:
         hparams = {}
         for var_name, dim in domain.flatten().items():
-            dim_type = ht_opt.Domain.get_type(dim)
+            dim_type = opt.Domain.get_type(dim)
             joined_name = utils.join_strings(var_name, join_char="/")
-            if dim_type == ht_opt.Domain.Continuous:
+            if dim_type == opt.Domain.Continuous:
                 hp_dim_type = hp.RealInterval
                 vals = dim
-            elif dim_type in [ht_opt.Domain.Discrete, ht_opt.Domain.Categorical]:
+            elif dim_type in [opt.Domain.Discrete, opt.Domain.Categorical]:
                 hp_dim_type = hp.Discrete
                 vals = (dim,)
             else:
@@ -65,7 +66,7 @@ class TensorboardReporter:
             hparams[joined_name] = hp.HParam(joined_name, hp_dim_type(*vals))
         return hparams
 
-    def _convert_to_hparams_sample(self, sample: ht_opt.Sample) -> Dict[hp.HParam, Any]:
+    def _convert_to_hparams_sample(self, sample: opt.Sample) -> Dict[hp.HParam, Any]:
         hparams = {}
         for name, val in sample:
             joined_name = utils.join_strings(name, join_char="/")
@@ -96,7 +97,7 @@ class TensorboardReporter:
                 sess.run(summary_scalar(metric_name, metric_value.value, step=1))
             sess.run(fw.flush())
 
-    def log(self, history: ht_opt.HistoryPoint, trial_dir: str = None):
+    def log(self, history: base.HistoryPoint, trial_dir: str = None):
         """Create an entry for a `HistoryPoint` in Tensorboard.
 
         Args:
@@ -115,7 +116,7 @@ class TensorboardReporter:
         else:
             self._log_tf_graph_mode(converted, history.metrics, full_trial_dir)
 
-    def from_history(self, history: List[ht_opt.HistoryPoint]):
+    def from_history(self, history: List[base.HistoryPoint]):
         """Create Tensorboard entries for all points in a history of evaluation samples.
 
         Args:

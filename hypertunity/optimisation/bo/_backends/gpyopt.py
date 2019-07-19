@@ -6,8 +6,8 @@ import numpy as np
 
 from multiprocessing import cpu_count
 
-import hypertunity.optimisation as ht_opt
-
+from hypertunity.optimisation import base
+from hypertunity.optimisation import domain as opt
 from hypertunity import utils
 
 
@@ -16,7 +16,7 @@ GPyOptDomain = List[Dict[str, Any]]
 GPyOptCategoricalValueMapper = Dict[str, Dict[Any, int]]
 
 
-class GPyOptBackend(ht_opt.BaseOptimiser):
+class GPyOptBackend(base.BaseOptimiser):
     """Wrapper Bayesian Optimiser using GPyOpt as a backend."""
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
@@ -41,7 +41,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
              is deferred to the user.
         """
         np.random.seed(seed)
-        domain = ht_opt.Domain(domain.as_dict(), seed=seed)
+        domain = opt.Domain(domain.as_dict(), seed=seed)
         super(GPyOptBackend, self).__init__(domain)
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
@@ -59,7 +59,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         self._data_fx = np.array([[]])
 
     @staticmethod
-    def _convert_to_gpyopt_domain(orig_domain: ht_opt.Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
+    def _convert_to_gpyopt_domain(orig_domain: opt.Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
         """Convert a `Domain` type object to `GPyOptDomain`.
 
         Args:
@@ -78,12 +78,12 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         flat_domain = orig_domain.flatten()
         for names, vals in flat_domain.items():
             dim_name = utils.join_strings(names)
-            domain_type = ht_opt.Domain.get_type(vals)
-            if domain_type == ht_opt.Domain.Continuous:
+            domain_type = opt.Domain.get_type(vals)
+            if domain_type == opt.Domain.Continuous:
                 dim_type = GPyOptBackend.CONTINUOUS_TYPE
-            elif domain_type == ht_opt.Domain.Discrete:
+            elif domain_type == opt.Domain.Discrete:
                 dim_type = GPyOptBackend.DISCRETE_TYPE
-            elif domain_type == ht_opt.Domain.Categorical:
+            elif domain_type == opt.Domain.Categorical:
                 dim_type = GPyOptBackend.CATEGORICAL_TYPE
                 value_mapper[dim_name] = {v: i for i, v in enumerate(vals)}
                 vals = tuple(range(len(vals)))
@@ -93,7 +93,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         assert len(gpyopt_domain) == len(orig_domain), "Mismatching dimensionality after domain conversion."
         return gpyopt_domain, value_mapper
 
-    def _convert_to_gpyopt_sample(self, orig_sample: ht_opt.Sample) -> GPyOptSample:
+    def _convert_to_gpyopt_sample(self, orig_sample: opt.Sample) -> GPyOptSample:
         """Convert a sample of type `Sample` to type `GPyOptSample` and vice versa.
 
         If the function is supplied with a `GPyOptSample` type object it calls the dedicated function
@@ -115,7 +115,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
             gpyopt_sample.append(val)
         return np.asarray(gpyopt_sample)
 
-    def _convert_from_gpyopt_sample(self, gpyopt_sample: GPyOptSample) -> ht_opt.Sample:
+    def _convert_from_gpyopt_sample(self, gpyopt_sample: GPyOptSample) -> opt.Sample:
         """Convert `GPyOptSample` type object to the corresponding `Sample` type.
 
         This is a registered function for the `self._convert_sample` function dispatcher.
@@ -141,7 +141,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
                 sub_dim[names[-1]] = self._inv_categorical_value_mapper[dim["name"]][value]
             else:
                 sub_dim[names[-1]] = value
-        return ht_opt.Sample(orig_sample)
+        return opt.Sample(orig_sample)
 
     def _build_model(self):
         """Build the surrogate model for the GPyOpt BayesianOptimisation.
@@ -159,7 +159,7 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         """Build the acquisition function."""
         return "EI"
 
-    def run_step(self, *args, **kwargs) -> List[ht_opt.Sample]:
+    def run_step(self, *args, **kwargs) -> List[opt.Sample]:
         """Run one step of Bayesian optimisation with a GP regression surrogate model.
 
         The first sample of the domain is chosen at random. Only after the model has been updated with at least one
@@ -194,12 +194,12 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         return next_samples
 
     def _update_one(self, x, fx):
-        if isinstance(fx, ht_opt.EvaluationScore):
-            self.history.append(ht_opt.HistoryPoint(sample=x, metrics={"score": fx}))
+        if isinstance(fx, base.EvaluationScore):
+            self.history.append(base.HistoryPoint(sample=x, metrics={"score": fx}))
             array_fx = np.array([[fx.value]])
         elif isinstance(fx, Dict):
             assert len(fx) == 1, "Currently only evaluations with a single metric are supported."
-            self.history.append(ht_opt.HistoryPoint(sample=x, metrics=fx))
+            self.history.append(base.HistoryPoint(sample=x, metrics=fx))
             array_fx = np.array([[list(fx.values())[0].value]])
         else:
             raise TypeError("Cannot update history for one sample and multiple evaluations. "
@@ -207,16 +207,17 @@ class GPyOptBackend(ht_opt.BaseOptimiser):
         converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
         return converted_x, array_fx
 
-    def update(self, x, fx):
+    def update(self, x, fx, **kwargs):
         """Update the surrogate model with the domain sample `x` and the function evaluation `fx`.
 
         Args:
+            **kwargs:
             x: `Sample`, one sample of the domain of the objective function.
             fx: either an `EvaluationScore` or a dict, mapping of metric names to `EvaluationScore`s
                 of the objective at `x`.
         """
         # both `converted_x` and `array_fx` must be 2dim arrays
-        if isinstance(x, ht_opt.Sample):
+        if isinstance(x, opt.Sample):
             converted_x, array_fx = self._update_one(x, fx)
         elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
             # append each history point to the tracked history and convert to numpy arrays

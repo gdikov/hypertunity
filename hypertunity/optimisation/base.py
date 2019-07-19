@@ -6,7 +6,7 @@ import abc
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
 
-from hypertunity.optimisation.domain import Sample, Domain
+from hypertunity.optimisation import domain as opt
 
 
 @dataclass
@@ -21,7 +21,7 @@ class HistoryPoint:
     """A tuple of a `Sample` at which the objective has been evaluated and the corresponding metrics.
     The latter is a mapping of a metric name to an `EvaluationScore`.
     """
-    sample: Sample
+    sample: opt.Sample
     metrics: Dict[str, EvaluationScore]
 
 
@@ -33,7 +33,7 @@ class BaseOptimiser:
     proposes values from its domain, evaluation history can be supplied via the `update` method.
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
-    def __init__(self, domain: Domain):
+    def __init__(self, domain: opt.Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
         Args:
@@ -48,7 +48,7 @@ class BaseOptimiser:
         return self._history
 
     @abc.abstractmethod
-    def run_step(self, *args, **kwargs) -> List[Sample]:
+    def run_step(self, *args, **kwargs) -> List[opt.Sample]:
         """Perform one step of optimisation and suggest the next sample to evaluate.
 
         Args:
@@ -68,7 +68,7 @@ class BaseOptimiser:
             x: `Sample`, one sample of the domain of the objective function.
             fx: `EvaluationScore`, the evaluation score of the objective at `x`
         """
-        if isinstance(x, Sample) and isinstance(fx, EvaluationScore):
+        if isinstance(x, opt.Sample) and isinstance(fx, EvaluationScore):
             self.history.append(HistoryPoint(sample=x, metrics={"score": fx}))
         elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
             self.history.extend([HistoryPoint(sample=i, metrics=j) for i, j in zip(x, fx)])

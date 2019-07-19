@@ -62,7 +62,7 @@ def evaluate_simple_continuous(opt, n_steps):
     for i in range(n_steps):
         samples = opt.run_step()
         evaluations = simple_continuous_func(np.array([s["x"] for s in samples]))
-        opt.update(samples, [EvaluationScore(ev) for ev in evaluations])
+        opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
         all_samples.extend([s["x"] for s in samples])
         all_evaluations.extend(evaluations)
@@ -79,7 +79,7 @@ def evaluate_simple_mixed(opt, n_steps):
     for i in range(n_steps):
         samples = opt.run_step()
         evaluations = [simple_mixed_func(s["x"], s["y"], s["z"]) for s in samples]
-        opt.update(samples, [EvaluationScore(ev) for ev in evaluations])
+        opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
         all_samples.extend([(s["x"], s["y"], s["z"]) for s in samples])
         all_evaluations.extend(evaluations)
@@ -97,7 +97,7 @@ def evaluate_simple_discrete(opt, n_steps):
     for i in range(n_steps):
         samples = opt.run_step()
         evaluations = [simple_discrete_func(s["x"], s["y"], s["z"]) for s in samples]
-        opt.update(samples, [EvaluationScore(ev) for ev in evaluations])
+        opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
         all_samples.extend([(s["x"], s["y"], s["z"]) for s in samples])
         all_evaluations.extend(evaluations)

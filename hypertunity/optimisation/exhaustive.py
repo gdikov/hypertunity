@@ -3,7 +3,8 @@
 
 from typing import List
 
-import hypertunity.optimisation as ht_opt
+from hypertunity.optimisation import domain as opt
+from hypertunity.optimisation.base import BaseOptimiser
 
 
 __all__ = [
@@ -17,7 +18,7 @@ class ExhaustedSearchSpaceError(Exception):
     pass
 
 
-class GridSearch(ht_opt.BaseOptimiser):
+class GridSearch(BaseOptimiser):
     def __init__(self, domain, batch_size=1, sample_continuous=False, seed=None):
         """Initialise the GridSearch optimiser from a discrete domain.
 
@@ -30,15 +31,15 @@ class GridSearch(ht_opt.BaseOptimiser):
             seed: optional int, seed the sampling of the continuous subspace.
         """
         if domain.is_continuous and not sample_continuous:
-            raise ht_opt.DomainNotIterableError(
+            raise opt.DomainNotIterableError(
                 "Cannot perform grid search on (partially) continuous domain. "
                 "To enable grid search in this case, set 'sample_continuous' to True.")
         super(GridSearch, self).__init__(domain)
-        discrete_domain, categorical_domain, continuous_domain = ht_opt.split_domain_by_type(domain)
+        discrete_domain, categorical_domain, continuous_domain = opt.split_domain_by_type(domain)
         # unify the discrete and the categorical into one, as they can be iterated:
         self.discrete_domain = discrete_domain + categorical_domain
         if seed is not None:
-            self.continuous_domain = ht_opt.Domain(continuous_domain.as_dict(), seed=seed)
+            self.continuous_domain = opt.Domain(continuous_domain.as_dict(), seed=seed)
         else:
             self.continuous_domain = continuous_domain
         self._discrete_domain_iter = iter(self.discrete_domain)
@@ -47,7 +48,7 @@ class GridSearch(ht_opt.BaseOptimiser):
         self.__exhausted_err = ExhaustedSearchSpaceError(
             "The domain has been exhausted. Reset the optimiser to start again.")
 
-    def run_step(self) -> List[ht_opt.Sample]:
+    def run_step(self) -> List[opt.Sample]:
         """Get the next `batch_size` samples from the Cartesian-product walk over the domain.
 
         Returns:
