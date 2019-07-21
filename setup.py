@@ -6,7 +6,7 @@ setup(
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",
-    description="Framework for distributed black-box hyperparameter optimisation.",
+    description="A toolset for distributed black-box hyperparameter optimisation.",
     long_description=open("README.md").read(),
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     python_requires=">=3.6",
