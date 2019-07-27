@@ -1,5 +1,5 @@
 # Hypertunity
-A toolset for distributed black-box hyperparameter optimisation.
+A toolset for black-box hyperparameter optimisation.
 
 [![CircleCI](https://circleci.com/gh/gdikov/hypertunity/tree/master.svg?style=svg&circle-token=1e875efacfef7d74c4ae07321d6be6d8482a13b1)](https://circleci.com/gh/gdikov/hypertunity/tree/master)
 
@@ -7,7 +7,7 @@ A toolset for distributed black-box hyperparameter optimisation.
 
 _Hypertunity_ is a lightweight, high-level library for hyperparameter optimisation. 
 Among others, it supports Bayesian Optimisation by wrapping [GPyOpt](http://sheffieldml.github.io/GPyOpt/),
-it allows for a deferred distributed objective function evaluation using [Slurm](https://www.schedmd.com) 
+it allows for an external objective function evaluation 
 and visualises results in real time in [Tensorboard](https://www.tensorflow.org/tensorboard) 
 using the [HParams](https://www.tensorflow.org/tensorboard/r2/hyperparameter_tuning_with_hparams) plugin.
 
@@ -18,7 +18,7 @@ A central object in _Hypertunity_ is the `Domain` defining the space of valid va
 A `Sample` is a one realisation from the `Domain`, which supplied to the objective function will result in an
 `EvaluationScore`. The latter is a numeric value representing the goodness of the sample.
 
-Let's define a wrapper around an expensive objective function that takes a `Sample` and returns an `EvaluationScore`:
+Define a wrapper around an expensive objective function that takes a `Sample` and returns an `EvaluationScore`:
 ```python
 import hypertunity as ht
 
@@ -73,5 +73,5 @@ Checkout the latest master and install from source:
 ```bash
 git clone https://github.com/gdikov/hypertunity.git
 cd hypertunity
-pip install -e ./[tensorboard]
+pip install ./[tensorboard]
 ```
