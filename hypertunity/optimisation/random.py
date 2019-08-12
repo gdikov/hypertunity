@@ -2,10 +2,10 @@
 from typing import List
 
 from hypertunity.optimisation import domain as opt
-from hypertunity.optimisation.base import BaseOptimiser
+from hypertunity.optimisation.base import Optimiser
 
 
-class RandomSearch(BaseOptimiser):
+class RandomSearch(Optimiser):
     def __init__(self, domain, batch_size=1, seed=None):
         """Initialise the RandomSearch.
 

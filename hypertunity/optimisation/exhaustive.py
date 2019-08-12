@@ -4,7 +4,7 @@
 from typing import List
 
 from hypertunity.optimisation import domain as opt
-from hypertunity.optimisation.base import BaseOptimiser
+from hypertunity.optimisation.base import Optimiser
 
 
 __all__ = [
@@ -18,7 +18,7 @@ class ExhaustedSearchSpaceError(Exception):
     pass
 
 
-class GridSearch(BaseOptimiser):
+class GridSearch(Optimiser):
     def __init__(self, domain, batch_size=1, sample_continuous=False, seed=None):
         """Initialise the GridSearch optimiser from a discrete domain.
 

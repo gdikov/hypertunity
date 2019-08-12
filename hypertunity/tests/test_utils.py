@@ -1,4 +1,5 @@
 import pytest
+import queue
 
 from .. import utils
 
@@ -18,3 +19,14 @@ def test_split_and_join_strings():
         assert s == utils.split_string(utils.join_strings(s, join_char="_"), split_char="_")
     with pytest.raises(ValueError):
         utils.join_strings(["asd", "\\", "\n"])
+
+
+def test_drain_queue():
+    q = queue.Queue(10)
+    elems = list(range(10))
+    for i in elems:
+        q.put(i)
+    items = utils.drain_queue(q)
+    assert items == elems
+    with pytest.raises(queue.Empty):
+        q.get_nowait()

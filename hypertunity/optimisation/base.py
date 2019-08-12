@@ -25,7 +25,7 @@ class HistoryPoint:
     metrics: Dict[str, EvaluationScore]
 
 
-class BaseOptimiser:
+class Optimiser:
     """Abstract `Optimiser` to be implemented by all subtypes in this package.
 
     Every `Optimiser` can be run for one single step at a time using the `run_step` method.
@@ -81,4 +81,4 @@ class BaseOptimiser:
         self._history.clear()
 
 
-BaseOptimizer = BaseOptimiser
+Optimizer = Optimiser

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import queue
 
 GB_US_SPELLING = {"minimise": "minimize",
                   "maximise": "maximize",
@@ -76,3 +77,25 @@ def split_string(joined, split_char="_"):
     for s in strings:
         strings_copy.append(s.replace("\0", split_char))
     return tuple(strings_copy)
+
+
+def drain_queue(q, close_queue=False):
+    """Get all items from a queue until an `Empty` exception is raised.
+
+    Args:
+        q: `Queue`, the queue to drain.
+        close_queue: bool, whether to close the queue, such that no other object can be put in. Default is False.
+
+    Returns:
+        List of all items from the queue.
+    """
+    items = []
+    while True:
+        try:
+            it = q.get_nowait()
+        except queue.Empty:
+            break
+        items.append(it)
+    if close_queue:
+        q.close()
+    return items

@@ -6,8 +6,8 @@ import numpy as np
 
 from multiprocessing import cpu_count
 
-from hypertunity.optimisation import base
 from hypertunity.optimisation import domain as opt
+from hypertunity.optimisation.base import Optimiser, HistoryPoint, EvaluationScore
 from hypertunity import utils
 
 
@@ -16,7 +16,7 @@ GPyOptDomain = List[Dict[str, Any]]
 GPyOptCategoricalValueMapper = Dict[str, Dict[Any, int]]
 
 
-class GPyOptBackend(base.BaseOptimiser):
+class GPyOptBackend(Optimiser):
     """Wrapper Bayesian Optimiser using GPyOpt as a backend."""
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
@@ -194,12 +194,12 @@ class GPyOptBackend(base.BaseOptimiser):
         return next_samples
 
     def _update_one(self, x, fx):
-        if isinstance(fx, base.EvaluationScore):
-            self.history.append(base.HistoryPoint(sample=x, metrics={"score": fx}))
+        if isinstance(fx, EvaluationScore):
+            self.history.append(HistoryPoint(sample=x, metrics={"score": fx}))
             array_fx = np.array([[fx.value]])
         elif isinstance(fx, Dict):
             assert len(fx) == 1, "Currently only evaluations with a single metric are supported."
-            self.history.append(base.HistoryPoint(sample=x, metrics=fx))
+            self.history.append(HistoryPoint(sample=x, metrics=fx))
             array_fx = np.array([[list(fx.values())[0].value]])
         else:
             raise TypeError("Cannot update history for one sample and multiple evaluations. "
