@@ -14,7 +14,6 @@ from collections import namedtuple
 __all__ = [
     "Domain",
     "DomainNotIterableError",
-    "split_domain_by_type",
     "Sample"
 ]
 
@@ -317,24 +316,23 @@ class Domain(_RecursiveDict):
             return Domain.Categorical
         return Domain.Invalid
 
+    def split_by_type(self) -> Tuple['Domain', 'Domain', 'Domain']:
+        """Split the domain into discrete, categorical and continuous subdomains respectively."""
+        discrete, categorical, continuous = [], [], []
+        for keys, vals in self.flatten().items():
+            if Domain.get_type(vals) == Domain.Continuous:
+                continuous.append((keys, vals))
+            elif Domain.get_type(vals) == Domain.Categorical:
+                categorical.append((keys, vals))
+            elif Domain.get_type(vals) == Domain.Discrete:
+                discrete.append((keys, vals))
+            else:
+                raise ValueError("Encountered an invalid subdomain.")
+        return Domain.from_list(discrete), Domain.from_list(categorical), Domain.from_list(continuous)
+
 
 class DomainNotIterableError(Exception):
     pass
-
-
-def split_domain_by_type(domain) -> Tuple[Domain, Domain, Domain]:
-    """Split the domain into discrete, categorical and continuous subdomains respectively."""
-    discrete, categorical, continuous = [], [], []
-    for keys, vals in domain.flatten().items():
-        if Domain.get_type(vals) == Domain.Continuous:
-            continuous.append((keys, vals))
-        elif Domain.get_type(vals) == Domain.Categorical:
-            categorical.append((keys, vals))
-        elif Domain.get_type(vals) == Domain.Discrete:
-            discrete.append((keys, vals))
-        else:
-            raise ValueError("Encountered an invalid subdomain.")
-    return Domain.from_list(discrete), Domain.from_list(categorical), Domain.from_list(continuous)
 
 
 class Sample(_RecursiveDict):

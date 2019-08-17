@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-from hypertunity.optimisation import domain as opt
+from hypertunity.optimisation.domain import Domain, Sample
 from hypertunity.optimisation.base import Optimiser
 
 
@@ -18,10 +18,10 @@ class RandomSearch(Optimiser):
             seed: optional, int to seed the domain.
         """
         if seed is not None:
-            domain = opt.Domain(domain.as_dict(), seed=seed)
+            domain = Domain(domain.as_dict(), seed=seed)
         super(RandomSearch, self).__init__(domain)
         self._batch_size = batch_size
 
-    def run_step(self) -> List[opt.Sample]:
+    def run_step(self) -> List[Sample]:
         """Sample uniformly the domain `self.batch_size` number of times."""
         return [self.domain.sample() for _ in range(self._batch_size)]

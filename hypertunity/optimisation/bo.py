@@ -6,9 +6,15 @@ import numpy as np
 
 from multiprocessing import cpu_count
 
-from hypertunity.optimisation import domain as opt
-from hypertunity.optimisation.base import Optimiser, HistoryPoint, EvaluationScore
+from hypertunity.optimisation.domain import Domain, Sample
+from hypertunity.optimisation.base import Optimiser, EvaluationScore, HistoryPoint
 from hypertunity import utils
+
+
+__all__ = [
+    "BayesianOptimisation",
+    "BayesianOptimization"
+]
 
 
 GPyOptSample = TypeVar("GPyOptSample", List[List], np.ndarray)
@@ -16,15 +22,15 @@ GPyOptDomain = List[Dict[str, Any]]
 GPyOptCategoricalValueMapper = Dict[str, Dict[Any, int]]
 
 
-class GPyOptBackend(Optimiser):
-    """Wrapper Bayesian Optimiser using GPyOpt as a backend."""
+class BayesianOptimisation(Optimiser):
+    """Bayesian Optimiser using GPyOpt as a backend."""
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
     CATEGORICAL_TYPE = "categorical"
 
     @utils.support_american_spelling
     def __init__(self, domain, minimise, batch_size=1, seed=None, **backend_kwargs):
-        """Initialise the BO wrapper's domain and other options.
+        """Initialise the BO's domain and other options.
 
         Args:
             domain: `Domain` object defining the domain of the objective
@@ -41,8 +47,8 @@ class GPyOptBackend(Optimiser):
              is deferred to the user.
         """
         np.random.seed(seed)
-        domain = opt.Domain(domain.as_dict(), seed=seed)
-        super(GPyOptBackend, self).__init__(domain)
+        domain = Domain(domain.as_dict(), seed=seed)
+        super(BayesianOptimisation, self).__init__(domain)
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
                                               for name, mapping in self._categorical_value_mapper.items()}
@@ -54,12 +60,12 @@ class GPyOptBackend(Optimiser):
         else:
             self._evaluation_type = "sequential"
         self._backend_kwargs = backend_kwargs
-        self.__is_empty_data = True
         self._data_x = np.array([[]])
         self._data_fx = np.array([[]])
+        self.__is_empty_data = True
 
     @staticmethod
-    def _convert_to_gpyopt_domain(orig_domain: opt.Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
+    def _convert_to_gpyopt_domain(orig_domain: Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
         """Convert a `Domain` type object to `GPyOptDomain`.
 
         Args:
@@ -78,13 +84,13 @@ class GPyOptBackend(Optimiser):
         flat_domain = orig_domain.flatten()
         for names, vals in flat_domain.items():
             dim_name = utils.join_strings(names)
-            domain_type = opt.Domain.get_type(vals)
-            if domain_type == opt.Domain.Continuous:
-                dim_type = GPyOptBackend.CONTINUOUS_TYPE
-            elif domain_type == opt.Domain.Discrete:
-                dim_type = GPyOptBackend.DISCRETE_TYPE
-            elif domain_type == opt.Domain.Categorical:
-                dim_type = GPyOptBackend.CATEGORICAL_TYPE
+            domain_type = Domain.get_type(vals)
+            if domain_type == Domain.Continuous:
+                dim_type = BayesianOptimisation.CONTINUOUS_TYPE
+            elif domain_type == Domain.Discrete:
+                dim_type = BayesianOptimisation.DISCRETE_TYPE
+            elif domain_type == Domain.Categorical:
+                dim_type = BayesianOptimisation.CATEGORICAL_TYPE
                 value_mapper[dim_name] = {v: i for i, v in enumerate(vals)}
                 vals = tuple(range(len(vals)))
             else:
@@ -93,7 +99,7 @@ class GPyOptBackend(Optimiser):
         assert len(gpyopt_domain) == len(orig_domain), "Mismatching dimensionality after domain conversion."
         return gpyopt_domain, value_mapper
 
-    def _convert_to_gpyopt_sample(self, orig_sample: opt.Sample) -> GPyOptSample:
+    def _convert_to_gpyopt_sample(self, orig_sample: Sample) -> GPyOptSample:
         """Convert a sample of type `Sample` to type `GPyOptSample` and vice versa.
 
         If the function is supplied with a `GPyOptSample` type object it calls the dedicated function
@@ -110,12 +116,12 @@ class GPyOptBackend(Optimiser):
         for dim in self.gpyopt_domain:
             keys = utils.split_string(dim["name"])
             val = orig_sample[keys]
-            if dim["type"] == GPyOptBackend.CATEGORICAL_TYPE:
+            if dim["type"] == BayesianOptimisation.CATEGORICAL_TYPE:
                 val = self._categorical_value_mapper[dim["name"]][val]
             gpyopt_sample.append(val)
         return np.asarray(gpyopt_sample)
 
-    def _convert_from_gpyopt_sample(self, gpyopt_sample: GPyOptSample) -> opt.Sample:
+    def _convert_from_gpyopt_sample(self, gpyopt_sample: GPyOptSample) -> Sample:
         """Convert `GPyOptSample` type object to the corresponding `Sample` type.
 
         This is a registered function for the `self._convert_sample` function dispatcher.
@@ -137,11 +143,11 @@ class GPyOptBackend(Optimiser):
             for name in names[:-1]:
                 sub_dim[name] = {}
                 sub_dim = sub_dim[name]
-            if dim["type"] == GPyOptBackend.CATEGORICAL_TYPE:
+            if dim["type"] == BayesianOptimisation.CATEGORICAL_TYPE:
                 sub_dim[names[-1]] = self._inv_categorical_value_mapper[dim["name"]][value]
             else:
                 sub_dim[names[-1]] = value
-        return opt.Sample(orig_sample)
+        return Sample(orig_sample)
 
     def _build_model(self):
         """Build the surrogate model for the GPyOpt BayesianOptimisation.
@@ -159,7 +165,7 @@ class GPyOptBackend(Optimiser):
         """Build the acquisition function."""
         return "EI"
 
-    def run_step(self, *args, **kwargs) -> List[opt.Sample]:
+    def run_step(self, *args, **kwargs) -> List[Sample]:
         """Run one step of Bayesian optimisation with a GP regression surrogate model.
 
         The first sample of the domain is chosen at random. Only after the model has been updated with at least one
@@ -217,7 +223,7 @@ class GPyOptBackend(Optimiser):
                 of the objective at `x`.
         """
         # both `converted_x` and `array_fx` must be 2dim arrays
-        if isinstance(x, opt.Sample):
+        if isinstance(x, Sample):
             converted_x, array_fx = self._update_one(x, fx)
         elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
             # append each history point to the tracked history and convert to numpy arrays
@@ -236,7 +242,10 @@ class GPyOptBackend(Optimiser):
 
     def reset(self):
         """Reset the optimiser for a fresh start."""
-        super(GPyOptBackend, self).reset()
+        super(BayesianOptimisation, self).reset()
         self._data_x = np.array([])
         self._data_fx = np.array([])
         self.__is_empty_data = True
+
+
+BayesianOptimization = BayesianOptimisation

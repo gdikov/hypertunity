@@ -66,7 +66,7 @@ def evaluate_simple_continuous(opt, n_steps):
         # gather the samples and evaluations for later assessment
         all_samples.extend([s["x"] for s in samples])
         all_evaluations.extend(evaluations)
-    best_eval_index = np.argmax(all_evaluations)
+    best_eval_index = int(np.argmax(all_evaluations))
     best_sample = all_samples[best_eval_index]
     best_eval = all_evaluations[best_eval_index]
     assert np.isclose(best_sample, SIMPLE_CONT_FUNC_ARGMAX, atol=1e-1)
@@ -83,7 +83,7 @@ def evaluate_simple_mixed(opt, n_steps):
         # gather the samples and evaluations for later assessment
         all_samples.extend([(s["x"], s["y"], s["z"]) for s in samples])
         all_evaluations.extend(evaluations)
-    best_eval_index = np.argmax(all_evaluations)
+    best_eval_index = int(np.argmax(all_evaluations))
     best_sample = all_samples[best_eval_index]
     best_eval = all_evaluations[best_eval_index]
     assert np.isclose(best_sample[0], SIMPLE_MIXED_FUNC_ARGMAX[0], atol=1.0)
@@ -101,7 +101,7 @@ def evaluate_simple_discrete(opt, n_steps):
         # gather the samples and evaluations for later assessment
         all_samples.extend([(s["x"], s["y"], s["z"]) for s in samples])
         all_evaluations.extend(evaluations)
-    best_eval_index = np.argmax(all_evaluations)
+    best_eval_index = int(np.argmax(all_evaluations))
     best_sample = all_samples[best_eval_index]
     best_eval = all_evaluations[best_eval_index]
     assert best_sample == SIMPLE_DISCRETE_FUNC_ARGMAX

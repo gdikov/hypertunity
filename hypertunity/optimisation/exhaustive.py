@@ -3,13 +3,12 @@
 
 from typing import List
 
-from hypertunity.optimisation import domain as opt
+from hypertunity.optimisation.domain import Domain, Sample, DomainNotIterableError
 from hypertunity.optimisation.base import Optimiser
 
 
 __all__ = [
     "GridSearch",
-    "ListSearch",
     "ExhaustedSearchSpaceError"
 ]
 
@@ -31,15 +30,15 @@ class GridSearch(Optimiser):
             seed: optional int, seed the sampling of the continuous subspace.
         """
         if domain.is_continuous and not sample_continuous:
-            raise opt.DomainNotIterableError(
+            raise DomainNotIterableError(
                 "Cannot perform grid search on (partially) continuous domain. "
                 "To enable grid search in this case, set 'sample_continuous' to True.")
         super(GridSearch, self).__init__(domain)
-        discrete_domain, categorical_domain, continuous_domain = opt.split_domain_by_type(domain)
+        discrete_domain, categorical_domain, continuous_domain = domain.split_by_type()
         # unify the discrete and the categorical into one, as they can be iterated:
         self.discrete_domain = discrete_domain + categorical_domain
         if seed is not None:
-            self.continuous_domain = opt.Domain(continuous_domain.as_dict(), seed=seed)
+            self.continuous_domain = Domain(continuous_domain.as_dict(), seed=seed)
         else:
             self.continuous_domain = continuous_domain
         self._discrete_domain_iter = iter(self.discrete_domain)
@@ -48,7 +47,7 @@ class GridSearch(Optimiser):
         self.__exhausted_err = ExhaustedSearchSpaceError(
             "The domain has been exhausted. Reset the optimiser to start again.")
 
-    def run_step(self) -> List[opt.Sample]:
+    def run_step(self) -> List[Sample]:
         """Get the next `batch_size` samples from the Cartesian-product walk over the domain.
 
         Returns:
@@ -87,7 +86,3 @@ class GridSearch(Optimiser):
         super(GridSearch, self).reset()
         self._discrete_domain_iter = iter(self.discrete_domain)
         self._is_exhausted = len(self.discrete_domain) == 0
-
-
-class ListSearch:
-    pass

@@ -1,1 +1,0 @@
-from .gpyopt import GPyOptBackend

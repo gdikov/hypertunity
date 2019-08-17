@@ -1,8 +1,17 @@
 from setuptools import setup, find_packages
 
+
+required_packages = [
+    "dataclasses;python_version<'3.7'",
+    "numpy>=1.16",
+    "gpyopt==1.2.5",
+    "matplotlib>=3.0",
+    "joblib>=0.13.2"
+]
+
 setup(
     name="hypertunity",
-    version="0.2dev1",
+    version="0.2dev2",
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",
@@ -10,7 +19,7 @@ setup(
     long_description=open("README.md").read(),
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     python_requires=">=3.6",
-    install_requires=["dataclasses;python_version<'3.7'", "gpyopt==1.2.5", "matplotlib>=3.0", "joblib>=0.13.2"],
+    install_requires=required_packages,
     extras_require={
         "tensorboard": ["tensorflow>=1.14.0", "tensorboard>=1.14.0"],
         "tests": ["pytest>=4.6.3", "pytest-timeout>=1.3.3"]
