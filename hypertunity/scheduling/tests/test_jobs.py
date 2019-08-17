@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from .. import jobs
-from ..jobs import Job, Result
+from ..jobs import Job
 
 
 def test_repeating_id():
-    _ = Job(id=1, args=(), func=sum)
+    _ = Job(task=sum, args=(), id=-100)
     with pytest.raises(ValueError):
-        _ = Job(id=1, args=(), func=max)
-    _ = Job(id=2, args=(), func=sum)
-    jobs.reset_job_registry()
+        _ = Job(task=max, args=(), id=-100)
+    _ = Job(task=sum, args=(), id=-99)
 
 
 def test_callable_job():
-    for i, args in enumerate([(1, 2), (-4, 2), (131212, 123123123)]):
-        job = Job(id=i, args=args, func=lambda x, y: x + y)
-        assert job() == Result(id=job.id, data=sum(args))
-    jobs.reset_job_registry()
+    for args in [(1, 2), (-4, 2), (131212, 123123123)]:
+        job = Job(task=lambda x, y: x + y, args=args)
+        result = job()
+        assert result.data == sum(args)

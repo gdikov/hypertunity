@@ -75,10 +75,10 @@ class LocalScheduler(Scheduler):
                 # TODO: in a future version of joblib, this could be a generator and then the inputs
                 #  would be stored immediately in the results queue. Be ready to update whenever
                 #  this PR gets merged: https://github.com/joblib/joblib/pull/588
-                results = parallel(joblib.delayed(job.func)(*job.args) for job in current_jobs)
+                results = parallel(joblib.delayed(job)() for job in current_jobs)
                 assert len(ids) == len(results)
-                for id_, res in zip(ids, results):
-                    self._result_queue.put_nowait(Result(id=id_, data=res))
+                for res in results:
+                    self._result_queue.put_nowait(res)
 
     def dispatch(self, jobs: List[Job]):
         """Dispatch the jobs for parallel execution.
