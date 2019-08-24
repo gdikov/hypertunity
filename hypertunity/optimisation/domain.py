@@ -3,13 +3,11 @@
 
 import ast
 import copy
-import random
 import os
 import pickle
-
-from typing import Tuple
+import random
 from collections import namedtuple
-
+from typing import Tuple
 
 __all__ = [
     "Domain",
@@ -20,6 +18,7 @@ __all__ = [
 
 class _RecursiveDict:
     """Helper base type for the `Domain` and `Sample` types implementing common logic."""
+
     def __init__(self, dct):
         if isinstance(dct, dict):
             self._data = dct
@@ -179,6 +178,7 @@ class _RecursiveDict:
             True
         ```
         """
+
         def helper(dct):
             keys, vals = [], []
             for k, v in dct.items():
@@ -189,6 +189,7 @@ class _RecursiveDict:
                     vals.append(v)
             # The dict.keys() and dict.values() will iterate in the same order as long as dct is not modified.
             return namedtuple("NT_" + self.__class__.__name__, keys)(*vals)
+
         return helper(self._data)
 
 
@@ -278,6 +279,7 @@ class Domain(_RecursiveDict):
         Returns:
             A `Sample` object.
         """
+
         def sample_dict(dct):
             sample = {}
             for key, vals in dct.items():
@@ -301,6 +303,7 @@ class Domain(_RecursiveDict):
         """Return the type of the set of values in a subdomain. Can be `Continuous`, `Discrete`, `Categorical` or
         `Invalid` if none of the above.
         """
+
         def is_numeric(x):
             try:
                 float(x)
@@ -342,6 +345,7 @@ class Sample(_RecursiveDict):
     or discrete subdomains or an object for the categorical ones.
     The keys correspond exactly to the keys of the respective domain.
     """
+
     def __init__(self, dct):
         super(Sample, self).__init__(dct)
 
@@ -370,6 +374,7 @@ def _deepiter_dict(dct):
         [(('a', 'b'), 1), (('a', 'c'), 2), (('d',), 3)]
     ```
     """
+
     def chained_keys_iter(prefix_keys, dct_tmp):
         for key, val in dct_tmp.items():
             chained_keys = prefix_keys + (key,)
@@ -379,4 +384,3 @@ def _deepiter_dict(dct):
                 yield chained_keys, val
 
     yield from chained_keys_iter((), dct)
-

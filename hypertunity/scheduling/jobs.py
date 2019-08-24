@@ -6,7 +6,6 @@ from typing import Callable, Tuple, Any, Union
 
 from hypertunity.utils import import_script
 
-
 _JOB_REGISTRY = set()
 _RESULT_REGISTRY = set()
 _ID_COUNTER = -1
@@ -49,11 +48,13 @@ def script_to_func(script_path: str) -> Callable:
     Raises:
           `AttributeError` if the script does not define a `main` function.
     """
+
     def wrapper(*args):
         module = import_script(script_path)
         if not hasattr(module, "main"):
             raise AttributeError(f"Cannot find 'main' function in {script_path}.")
         return module.main(*args)
+
     return wrapper
 
 

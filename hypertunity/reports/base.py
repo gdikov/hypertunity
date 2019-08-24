@@ -1,5 +1,4 @@
 import abc
-
 from typing import List, Any
 
 from hypertunity.optimisation.base import HistoryPoint
@@ -8,6 +7,7 @@ from hypertunity.optimisation.domain import Domain
 
 class Reporter:
     """Abstract `Reporter` class for result visualisation."""
+
     def __init__(self, domain: Domain, metrics: List[str]):
         """Initialise the base reporter.
 

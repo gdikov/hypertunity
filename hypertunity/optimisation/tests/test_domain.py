@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import pytest
-
 from collections import namedtuple
+
+import pytest
 
 import hypertunity as ht
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import importlib
+import os
 import queue
 import sys
-import os
-import importlib
 
 GB_US_SPELLING = {"minimise": "minimize",
                   "maximise": "maximize",
@@ -21,6 +21,7 @@ def support_american_spelling(func):
     Returns:
         The decorated function which supports American keyword arguments.
     """
+
     def british_spelling_func(*args, **kwargs):
         gb_kwargs = {US_GB_SPELLING.get(kw, kw): val for kw, val in kwargs.items()}
         return func(*args, **gb_kwargs)

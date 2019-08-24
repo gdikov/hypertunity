@@ -3,9 +3,8 @@
 
 from typing import List
 
-from hypertunity.optimisation.domain import Domain, Sample, DomainNotIterableError
 from hypertunity.optimisation.base import Optimiser
-
+from hypertunity.optimisation.domain import Domain, Sample, DomainNotIterableError
 
 __all__ = [
     "GridSearch",

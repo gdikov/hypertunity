@@ -2,7 +2,6 @@
 import pytest
 
 import hypertunity as ht
-
 from . import script
 from ..jobs import Job
 from ..local import LocalScheduler

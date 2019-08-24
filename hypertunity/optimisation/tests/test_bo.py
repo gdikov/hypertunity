@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import pytest
-
 import numpy as np
+import pytest
 
 import hypertunity as ht
 from . import _common as test_utils

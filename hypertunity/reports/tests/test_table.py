@@ -1,5 +1,5 @@
-from ..table import TableReporter
 from ._common import generate_history
+from ..table import TableReporter
 
 
 def test_from_history():
@@ -7,6 +7,6 @@ def test_from_history():
     history, domain = generate_history(n_samples)
     rep = TableReporter(domain, metrics=["metric_1", "metric_2"], primary_metric_index=0)
     rep.from_history(history)
-    data_history = [[i+1, *list(h.sample.flatten().values()), *list(h.metrics.values())]
+    data_history = [[i + 1, *list(h.sample.flatten().values()), *list(h.metrics.values())]
                     for i, h in enumerate(history)]
     assert rep.data.tolist() == data_history

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
 import os
-
+import sys
 from typing import List, Dict, Any
 
 try:
@@ -17,11 +16,9 @@ from hypertunity import utils
 
 from .base import Reporter
 
-
 __all__ = [
     "TensorboardReporter"
 ]
-
 
 EAGER_MODE = tf.executing_eagerly()
 session_builder = tf.compat.v1.Session
@@ -40,6 +37,7 @@ class TensorboardReporter(Reporter):
 
     The user is responsible for launching TensorBoard.
     """
+
     def __init__(self, domain: Domain, metrics: List[str], logdir: str):
         """Initialise the TensorBoard reporter.
 

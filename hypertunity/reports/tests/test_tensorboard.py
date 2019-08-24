@@ -2,8 +2,8 @@
 import os
 import tempfile
 
-from ..tensorboard import TensorboardReporter
 from ._common import generate_history
+from ..tensorboard import TensorboardReporter
 
 
 def test_from_history():

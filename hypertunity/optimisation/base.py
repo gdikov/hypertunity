@@ -4,11 +4,10 @@
 import abc
 import math
 
-from typing import List, Dict, Tuple
 from dataclasses import dataclass
+from typing import List, Dict, Tuple
 
 from hypertunity.optimisation.domain import Domain, Sample
-
 
 __all__ = [
     "EvaluationScore",
@@ -45,6 +44,7 @@ class Optimiser:
     proposes values from its domain, evaluation history can be supplied via the `update` method.
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
+
     def __init__(self, domain: Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 

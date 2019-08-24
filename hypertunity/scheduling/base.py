@@ -3,7 +3,6 @@
 
 import abc
 import multiprocessing as mp
-
 from typing import List
 
 from hypertunity import utils
@@ -19,6 +18,7 @@ class Scheduler:
     and defines template methods to override. This class should be used as
     a context manager.
     """
+
     def __init__(self):
         """Setup the job and results queues."""
         self._job_queue = mp.Queue()

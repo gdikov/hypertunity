@@ -13,7 +13,7 @@ def parse_args(args):
 def main(x: int, y: float, z: str) -> float:
     if z.endswith(tuple("0123456789")):
         return y * x
-    return y * x**2
+    return y * x ** 2
 
 
 if __name__ == '__main__':

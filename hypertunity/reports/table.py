@@ -1,17 +1,17 @@
 from typing import List, Any
 
-import numpy as np
 import beautifultable as bt
+import numpy as np
 
-from hypertunity.optimisation.domain import Domain
-from hypertunity.optimisation.base import HistoryPoint
 from hypertunity import utils
-
+from hypertunity.optimisation.base import HistoryPoint
+from hypertunity.optimisation.domain import Domain
 from .base import Reporter
 
 
 class TableReporter(Reporter):
     """A `Reporter` to print and store a formatted table of the results."""
+
     def __init__(self, domain: Domain, metrics: List[str], primary_metric_index: int = 0):
         """Initialise the table reporter.
 

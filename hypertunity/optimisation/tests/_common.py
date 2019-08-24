@@ -30,7 +30,7 @@ def simple_mixed_func(x, y, z):
     if y == "sin":
         return (simple_continuous_func(x) + z)[0]
     elif y == "sqr" and z in [0, 1, 2, 3]:
-        return x**2 - 3 * z
+        return x ** 2 - 3 * z
     else:
         raise ValueError("`y` can only be 'sin' or 'sqr' and z [0, 1, 2, 3].")
 

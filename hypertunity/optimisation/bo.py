@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
+from multiprocessing import cpu_count
 from typing import List, Dict, Tuple, TypeVar, Any
 
 import GPyOpt
 import numpy as np
 
-from multiprocessing import cpu_count
-
-from hypertunity.optimisation.domain import Domain, Sample
-from hypertunity.optimisation.base import Optimiser, EvaluationScore, HistoryPoint
 from hypertunity import utils
-
+from hypertunity.optimisation.base import Optimiser, EvaluationScore, HistoryPoint
+from hypertunity.optimisation.domain import Domain, Sample
 
 __all__ = [
     "BayesianOptimisation",
     "BayesianOptimization"
 ]
-
 
 GPyOptSample = TypeVar("GPyOptSample", List[List], np.ndarray)
 GPyOptDomain = List[Dict[str, Any]]
@@ -186,7 +183,7 @@ class BayesianOptimisation(Optimiser):
                 f=None, domain=self.gpyopt_domain,
                 maximize=not self._minimise,
                 X=self._data_x,
-                Y=(-1 + 2 * self._minimise) * self._data_fx,     # this hack is necessary due to a bug in GPyOpt
+                Y=(-1 + 2 * self._minimise) * self._data_fx,  # this hack is necessary due to a bug in GPyOpt
                 initial_design_numdata=len(self._data_x),
                 batch_size=self._batch_size,
                 num_cores=self._num_cores,

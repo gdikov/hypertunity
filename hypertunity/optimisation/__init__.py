@@ -1,5 +1,5 @@
 from .base import *
-from .domain import *
 from .bo import *
-from .random import *
+from .domain import *
 from .exhaustive import *
+from .random import *

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """Experiment scheduler for running jobs locally in a parallel manner using joblib as a backend."""
 
-from typing import List
-import time
 import multiprocessing as mp
+import time
+from typing import List
 
 import joblib
 
+from hypertunity import utils
 from .base import Scheduler
 from .jobs import Job, Result
-from hypertunity import utils
 
 __all__ = [
     "LocalScheduler"
@@ -20,6 +20,7 @@ class LocalScheduler(Scheduler):
     """This Scheduler uses the locally available machine to run the jobs.
     A job can either be a python callable functions or a python executable script.
     """
+
     def __init__(self, n_parallel: int = None):
         """
         Args:
@@ -27,7 +28,7 @@ class LocalScheduler(Scheduler):
         """
         super(LocalScheduler, self).__init__()
         if n_parallel is None:
-            self.n_parallel = -2     # using all CPUs but 1
+            self.n_parallel = -2  # using all CPUs but 1
         else:
             self.n_parallel = max(n_parallel, 1)
         self._servant = mp.Process(target=self._run_servant)

@@ -1,5 +1,6 @@
-import pytest
 import queue
+
+import pytest
 
 from .. import utils
 
