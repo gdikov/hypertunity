@@ -2,6 +2,7 @@
 """Defines the API of every optimiser and implements common logic."""
 
 import abc
+import math
 
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
@@ -17,14 +18,17 @@ __all__ = [
 ]
 
 
-@dataclass
+@dataclass(frozen=True, order=True)
 class EvaluationScore:
     """A tuple of the evaluation value of the objective and a variance if known."""
     value: float
     variance: float = 0.0
 
+    def __str__(self):
+        return f"{self.value:.3f} ± {math.sqrt(self.variance):.1f}"
 
-@dataclass
+
+@dataclass(frozen=True)
 class HistoryPoint:
     """A tuple of a `Sample` at which the objective has been evaluated and the corresponding metrics.
     The latter is a mapping of a metric name to an `EvaluationScore`.

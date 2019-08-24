@@ -6,7 +6,8 @@ import importlib
 
 GB_US_SPELLING = {"minimise": "minimize",
                   "maximise": "maximize",
-                  "optimise": "optimize"}
+                  "optimise": "optimize",
+                  "emphasise": "emphasize"}
 
 US_GB_SPELLING = {us: gb for gb, us in GB_US_SPELLING.items()}
 

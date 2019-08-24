@@ -29,7 +29,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            py.test --verbose hypertunity
+            py.test --verbose --runslow hypertunity
       - store_artifacts:
           path: test-reports
           destination: test-reports
