@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Define the optimisation domain as a tweaked Python dictionary."""
 
 import ast

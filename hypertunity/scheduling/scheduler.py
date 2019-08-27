@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""Experiment scheduler for running jobs locally in a parallel manner using joblib as a backend."""
+"""A scheduler for running jobs locally in a parallel manner using joblib as a backend."""
 
 import multiprocessing as mp
 import time
@@ -8,25 +7,29 @@ from typing import List
 import joblib
 
 from hypertunity import utils
-from .base import Scheduler
 from .jobs import Job, Result
 
 __all__ = [
-    "LocalScheduler"
+    "Scheduler"
 ]
 
 
-class LocalScheduler(Scheduler):
-    """This Scheduler uses the locally available machine to run the jobs.
+class Scheduler:
+    """A Scheduler using the locally available machine to run the jobs.
     A job can either be a python callable functions or a python executable script.
+    It maintains a `Job` and `Result` queues. This class should be used as a context manager.
     """
 
     def __init__(self, n_parallel: int = None):
-        """
+        """Setup the job and results queues.
+
         Args:
             n_parallel: int, the number of jobs that can be run in parallel.
         """
-        super(LocalScheduler, self).__init__()
+        self._job_queue = mp.Queue()
+        self._result_queue = mp.Queue()
+        self._is_closed = False
+
         if n_parallel is None:
             self.n_parallel = -2  # using all CPUs but 1
         else:
@@ -36,19 +39,21 @@ class LocalScheduler(Scheduler):
         self._servant.start()
 
     def __del__(self):
-        """Clean up subprocess on object deletion."""
-        super(LocalScheduler, self).__del__()
+        """Clean up subprocess on object deletion.
+        Close the queues and join all subprocesses before the object is deleted.
+        """
+        if not self._is_closed:
+            self.exit()
         if self._servant.is_alive():
             self._servant.terminate()
 
     def __enter__(self):
         """Run the servant subprocess on context creation."""
-        super(LocalScheduler, self).__enter__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Interrupt and terminate the servant process."""
-        super(LocalScheduler, self).__exit__(exc_type, exc_val, exc_tb)
+        self.exit()
         self._interrupt_event.set()
         # wait a bit for the subprocess to exit gracefully
         n_retries = 3
@@ -82,7 +87,7 @@ class LocalScheduler(Scheduler):
                     self._result_queue.put_nowait(res)
 
     def dispatch(self, jobs: List[Job]):
-        """Dispatch the jobs for parallel execution.
+        """Dispatch the jobs for parallel execution. This method is non-blocking.
 
         Args:
             jobs: list of `Job`s to run.
@@ -95,16 +100,23 @@ class LocalScheduler(Scheduler):
             self._job_queue.put_nowait(job)
 
     def collect(self, n_results: int = 0, timeout: float = None) -> List[Result]:
-        """Collect the results from the finished jobs.
+        """Collect all the available results or wait until they become available.
 
         Args:
             n_results: int, number of results to wait for. If n_results <= 0 then all available results
                 will be returned.
-            timeout: float, number of seconds (or fraction thereof) to wait if no results are available
-                and `n_results` > 0.
+            timeout: float, number of seconds to wait if no results are available and `n_results` > 0.
+                If None (default) then it will wait until all `n_results` are collected.
 
         Returns:
-            List of `Result` objects.
+            A list of `Result` objects with length `n_results` at least.
+
+        Notes:
+            If `n_results` is overestimated and timeout is None, then this method will hang forever.
+            Therefore it is recommended that a timeout is set.
+
+        Raises:
+            TimeoutError if more than `timeout` seconds elapse before a `Result` is collected.
         """
         if n_results > 0:
             results = []
@@ -115,5 +127,14 @@ class LocalScheduler(Scheduler):
         return results
 
     def interrupt(self):
-        """Interrupt the scheduler"""
+        """Interrupt the scheduler and all running jobs."""
         self._interrupt_event.set()
+
+    def exit(self):
+        """Exit the scheduler by closing the queues and cleaning-up."""
+        if not self._is_closed:
+            utils.drain_queue(self._job_queue, close_queue=True)
+            self._job_queue.join_thread()
+            utils.drain_queue(self._result_queue, close_queue=True)
+            self._result_queue.join_thread()
+            self._is_closed = True

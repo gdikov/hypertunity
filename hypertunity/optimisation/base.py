@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Defines the API of every optimiser and implements common logic."""
 
 import abc
 import math
-
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
 
@@ -45,14 +43,20 @@ class Optimiser:
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
 
-    def __init__(self, domain: Domain):
+    def __init__(self, domain: Domain, batch_size: int = 1):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
         Args:
             domain: `Domain`, the objective function's optimisation domain.
+            batch_size: int, the number of samples to suggest at one step of `run_step`.
         """
         self.domain = domain
+        self._batch_size = batch_size
         self._history: List[HistoryPoint] = []
+
+    @property
+    def batch_size(self):
+        return self._batch_size
 
     @property
     def history(self):

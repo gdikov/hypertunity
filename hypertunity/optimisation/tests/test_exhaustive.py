@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from hypertunity.optimisation import domain as opt

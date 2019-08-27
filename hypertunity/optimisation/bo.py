@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from multiprocessing import cpu_count
 from typing import List, Dict, Tuple, TypeVar, Any
 
@@ -45,13 +44,12 @@ class BayesianOptimisation(Optimiser):
         """
         np.random.seed(seed)
         domain = Domain(domain.as_dict(), seed=seed)
-        super(BayesianOptimisation, self).__init__(domain)
+        super(BayesianOptimisation, self).__init__(domain, batch_size)
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
                                               for name, mapping in self._categorical_value_mapper.items()}
         self._minimise = minimise
-        self._batch_size = batch_size
-        self._num_cores = min(self._batch_size, cpu_count() - 1)
+        self._num_cores = min(self.batch_size, cpu_count() - 1)
         if batch_size > 1:
             self._evaluation_type = "local_penalization"
         else:
@@ -172,7 +170,7 @@ class BayesianOptimisation(Optimiser):
             A list of `self.batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
         """
         if self.__is_empty_data:
-            next_samples = [self.domain.sample() for _ in range(self._batch_size)]
+            next_samples = [self.domain.sample() for _ in range(self.batch_size)]
         else:
             assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise a BO method from empty data."
             # NOTE: as of GPyOpt 1.2.5 adding new data to an existing model is not yet possible,
@@ -185,7 +183,7 @@ class BayesianOptimisation(Optimiser):
                 X=self._data_x,
                 Y=(-1 + 2 * self._minimise) * self._data_fx,  # this hack is necessary due to a bug in GPyOpt
                 initial_design_numdata=len(self._data_x),
-                batch_size=self._batch_size,
+                batch_size=self.batch_size,
                 num_cores=self._num_cores,
                 evaluator_type=self._evaluation_type,
                 model_type=self._build_model(),

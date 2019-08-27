@@ -6,17 +6,19 @@ A toolset for black-box hyperparameter optimisation.
 ## Why Hypertunity
 
 _Hypertunity_ is a lightweight, high-level library for hyperparameter optimisation. 
-Among others, it supports Bayesian Optimisation by wrapping [GPyOpt](http://sheffieldml.github.io/GPyOpt/),
-it allows for an external objective function evaluation 
-and visualises results in real time in [Tensorboard](https://www.tensorflow.org/tensorboard) 
-using the [HParams](https://www.tensorflow.org/tensorboard/r2/hyperparameter_tuning_with_hparams) plugin.
+Among others, it supports:
+ * Bayesian optimisation by wrapping [GPyOpt](http://sheffieldml.github.io/GPyOpt/),
+ * external or internal objective function evaluation by a scheduler, also compatible with [Slurm](https://slurm.schedmd.com),
+ * real-time visualisation of results in [Tensorboard](https://www.tensorflow.org/tensorboard) 
+ via the [HParams](https://www.tensorflow.org/tensorboard/r2/hyperparameter_tuning_with_hparams) plugin.
 
+For the full set of features refer to the [documentation](tbd).
 
 ## Quick start
 
 A central object in _Hypertunity_ is the `Domain` defining the space of valid values for an objective function.
-A `Sample` is a one realisation from the `Domain`, which supplied to the objective function will result in an
-`EvaluationScore`. The latter is a numeric value representing the goodness of the sample.
+A `Sample` is a one realisation from the `Domain`, which supplied to the objective function results in an
+`EvaluationScore`——a numeric value representing the goodness of the sample.
 
 Define a wrapper around an expensive objective function that takes a `Sample` and returns an `EvaluationScore`:
 ```python
@@ -27,8 +29,7 @@ def foo(x: ht.Sample) -> ht.EvaluationScore:
     ...
     return ht.EvaluationScore(score, variance)
 ```
-Define the valid ranges of values for `foo` and the optimiser.
-In this case a Bayesian Optimisation using GP regression as a surrogate model:
+Define the valid ranges of values for `foo` and the optimiser:
 
 ```python
 # define the optimisation domain
@@ -37,10 +38,7 @@ domain = ht.Domain({"x": [-5., 6.],           # continuous variable within the i
                     "z": tuple(range(4))})    # discrete variable from the set {0, 1, 2, 3}
 
 # initialise a BO optimiser
-bo = ht.BayesianOptimisation(backend="gpyopt",
-                             domain=domain, 
-                             minimise=True,
-                             batch_size=2)
+bo = ht.BayesianOptimisation(domain=domain, minimise=True, batch_size=2)
 ```
 
 Run the optimisation for 10 steps, while updating the optimiser:
@@ -61,9 +59,7 @@ Finally, visualise the results in Tensorboard:
 ```python
 import hypertunity.reports.tensorboard as tb
 
-results = tb.TensorboardReporter(domain=domain, 
-                                 metrics=["score"],
-                                 logdir="path/to/logdir")
+results = tb.TensorboardReporter(domain=domain, metrics=["score"], logdir="path/to/logdir")
 results.from_history(bo.history)
 ```
 

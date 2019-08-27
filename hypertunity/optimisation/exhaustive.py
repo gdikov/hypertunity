@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Optimisation by exhaustive search, e.g. regular grid or list search."""
 
 from typing import List
@@ -32,7 +31,7 @@ class GridSearch(Optimiser):
             raise DomainNotIterableError(
                 "Cannot perform grid search on (partially) continuous domain. "
                 "To enable grid search in this case, set 'sample_continuous' to True.")
-        super(GridSearch, self).__init__(domain)
+        super(GridSearch, self).__init__(domain, batch_size)
         discrete_domain, categorical_domain, continuous_domain = domain.split_by_type()
         # unify the discrete and the categorical into one, as they can be iterated:
         self.discrete_domain = discrete_domain + categorical_domain
@@ -42,7 +41,6 @@ class GridSearch(Optimiser):
             self.continuous_domain = continuous_domain
         self._discrete_domain_iter = iter(self.discrete_domain)
         self._is_exhausted = len(self.discrete_domain) == 0
-        self._batch_size = batch_size
         self.__exhausted_err = ExhaustedSearchSpaceError(
             "The domain has been exhausted. Reset the optimiser to start again.")
 
@@ -65,7 +63,7 @@ class GridSearch(Optimiser):
             raise self.__exhausted_err
 
         samples = []
-        for i in range(self._batch_size):
+        for i in range(self.batch_size):
             try:
                 discrete = next(self._discrete_domain_iter)
             except StopIteration:

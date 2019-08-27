@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-import importlib
-import os
 import queue
-import sys
 
-GB_US_SPELLING = {"minimise": "minimize",
-                  "maximise": "maximize",
-                  "optimise": "optimize",
-                  "emphasise": "emphasize"}
+GB_US_SPELLING = {
+    "minimise": "minimize",
+    "maximise": "maximize",
+    "optimise": "optimize",
+    "emphasise": "emphasize"
+}
 
 US_GB_SPELLING = {us: gb for gb, us in GB_US_SPELLING.items()}
 
@@ -104,28 +102,3 @@ def drain_queue(q, close_queue=False):
     if close_queue:
         q.close()
     return items
-
-
-def import_script(path):
-    """Import a module or script by a given path.
-
-    Args:
-        path: str, can be either a module import of the form [package.]*[module]
-            if the outer most package is in the PYTHONPATH, or a path to an arbitrary python script.
-
-    Returns:
-        The loaded python script as a module.
-    """
-    try:
-        module = importlib.import_module(path)
-    except ModuleNotFoundError:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Cannot find script {path}.")
-        if not os.path.basename(path).endswith(".py"):
-            raise ValueError(f"Expected a python script ending with *.py, found {os.path.basename(path)}.")
-        import_path = os.path.dirname(os.path.abspath(path))
-        sys.path.append(import_path)
-        module = importlib.import_module(f"{os.path.basename(path).rstrip('.py')}",
-                                         package=f"{os.path.basename(import_path)}")
-        sys.path.pop()
-    return module
