@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.2.0] - 2019-08-28
 ## Added
 - `Scheduler` to run jobs locally using joblib.
 - `SlurmJob` and `Job` dataclasses defining the tasks to be scheduled.
