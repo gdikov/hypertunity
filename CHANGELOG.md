@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 `Sample` object and a score, which can be a float or an `EvaluationScore`.
 - `BayesianOptimisation` optimiser can be updated with a `Sample` and 
 a float or `EvaluationScore` objective evaluation types.
+- a discrete/categorical `Domain` is defined with a set literal instead of a tuple.
 
 ## [0.2.0] - 2019-08-28
 ## Added
