@@ -13,7 +13,7 @@ def test_random_simple_continuous():
 
 
 def test_random_simple_mixed():
-    domain = Domain({"x": [-5., 6.], "y": ("sin", "sqr"), "z": tuple(range(4))})
+    domain = Domain({"x": [-5., 6.], "y": {"sin", "sqr"}, "z": set(range(4))})
     rs = RandomSearch(
         domain=domain,
         batch_size=50,

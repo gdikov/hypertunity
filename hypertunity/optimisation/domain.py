@@ -32,9 +32,12 @@ class _RecursiveDict:
         for _, val in _deepiter_dict(self._data):
             self._ndim += 1
 
-    def __repr__(self):
+    def __hash__(self):
+        return hash(str(self))
+
+    def __str__(self):
         """Return the string representation of the recursive dict."""
-        return repr(self._data)
+        return str(self._data)
 
     def __eq__(self, other):
         """Compare all subdomains for equal bounds and sets. The order of the subdomains is not important."""
@@ -196,19 +199,19 @@ class Domain(_RecursiveDict):
     """Define the optimisation domain which can be of continuous or discrete numeric nature or a set of
     other categorical non-numeric values. It is represented as a Python dict object with the keys naming the
     subdomains and the values defining the set of possible variable values. For continuous sets use lists: [min, max].
-    For discrete (categorical or numeric) sets use tuples, e.g. (1, 2, 5, -0.1) or ("1", "2").
+    For discrete (categorical or numeric) sets use python sets, e.g. {1, 2, 5, -0.1} or {"1", "2"}.
 
     Notes:
         Domains can be recursively specified, i.e. a key can be a name of a subdomain and the value---a Python dict.
 
     Examples:
         ```python
-        >>> three_dim_domain = {"x": (0, 1),
+        >>> three_dim_domain = {"x": {0, 1},
         >>>                     "y": [-2.5, 3.5],
         >>>                     "z": [-1, 2, 4]}
-        nested_domain = {"discrete_subdomain": {"x": (1, 2, 3), "y": (4, 5, 6)}
-                         "continuous_subdomain": {"x": [-4, 4], "y": [0, 1]}
-                         "categorical_options": ("opt1", "opt2")}
+        >>> nested_domain = {"discrete_subdomain": {"x": {1, 2, 3}, "y": {4, 5, 6}}
+        >>>                  "continuous_subdomain": {"x": [-4, 4], "y": [0, 1]}
+        >>>                  "categorical_options": {"opt1", "opt2"}}
         ```
     """
     # Domain types
@@ -229,7 +232,7 @@ class Domain(_RecursiveDict):
 
         if not self._validate():
             raise ValueError("Bad domain specification. Keys must be of type string and values must be "
-                             "either of a tuple, list or dict type.")
+                             "either of a set, list or dict type.")
 
         self._is_continuous = False
         for _, val in _deepiter_dict(self._data):
@@ -252,7 +255,7 @@ class Domain(_RecursiveDict):
         def cartesian_walk(dct):
             if dct:
                 key, vals = dct.popitem()
-                if isinstance(vals, tuple):
+                if isinstance(vals, set):
                     for v in vals:
                         yield from (dict(**rem, **{key: v}) for rem in cartesian_walk(copy.deepcopy(dct)))
                 elif isinstance(vals, dict):
@@ -268,7 +271,7 @@ class Domain(_RecursiveDict):
     def _validate(self):
         """Check for invalid domain specifications."""
         for keys, values in _deepiter_dict(self._data):
-            if not (all(map(lambda x: isinstance(x, str), keys)) and isinstance(values, (tuple, list, dict))):
+            if not (all(map(lambda x: isinstance(x, str), keys)) and isinstance(values, (set, list, dict))):
                 return False
         return True
 
@@ -282,8 +285,8 @@ class Domain(_RecursiveDict):
         def sample_dict(dct):
             sample = {}
             for key, vals in dct.items():
-                if isinstance(vals, tuple):
-                    sample[key] = self._rng.choice(vals)
+                if isinstance(vals, set):
+                    sample[key] = self._rng.choice(list(vals))
                 elif isinstance(vals, list):
                     sample[key] = self._rng.uniform(*vals)
                 else:
@@ -312,7 +315,7 @@ class Domain(_RecursiveDict):
 
         if isinstance(subdomain, list):
             return Domain.Continuous
-        if isinstance(subdomain, tuple):
+        if isinstance(subdomain, set):
             if all(map(is_numeric, subdomain)):
                 return Domain.Discrete
             return Domain.Categorical

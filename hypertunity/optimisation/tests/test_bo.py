@@ -32,7 +32,7 @@ def test_bo_simple_continuous():
 
 @pytest.mark.slow
 def test_bo_simple_mixed():
-    domain = ht.Domain({"x": [-5., 6.], "y": ("sin", "sqr"), "z": tuple(range(4))})
+    domain = ht.Domain({"x": [-5., 6.], "y": {"sin", "sqr"}, "z": set(range(4))})
     bo = ht.BayesianOptimization(
         domain=domain,
         batch_size=7,

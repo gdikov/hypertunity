@@ -23,7 +23,7 @@ def _run_jobs(jobs):
 
 @pytest.mark.timeout(10.0)
 def test_local_from_script():
-    domain = ht.Domain({"x": (0, 1, 2, 3), "y": [-1., 1.], "z": ("123", "abc")}, seed=7)
+    domain = ht.Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}}, seed=7)
     jobs = [Job(task="hypertunity/scheduling/tests/script.py",
                 args=(*domain.sample().as_namedtuple(),)) for _ in range(10)]
     results = _run_jobs(jobs)
@@ -41,7 +41,7 @@ def test_local_from_fn():
 @pytest.mark.slurm
 @pytest.mark.timeout(60.0)
 def test_slurm_from_script():
-    domain = ht.Domain({"x": (0, 1, 2, 3), "y": [-1., 1.], "z": ("123", "abc")}, seed=7)
+    domain = ht.Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}}, seed=7)
     jobs, dirs = [], []
     n_jobs = 4
     for i in range(n_jobs):

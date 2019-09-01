@@ -34,8 +34,8 @@ Define the valid ranges of values for `foo` and the optimiser:
 ```python
 # define the optimisation domain
 domain = ht.Domain({"x": [-5., 6.],           # continuous variable within the interval [-5., 6.]
-                    "y": ("opt1", "opt2"),    # categorical variable from the set {"opt1", "opt2"}
-                    "z": tuple(range(4))})    # discrete variable from the set {0, 1, 2, 3}
+                    "y": {"opt1", "opt2"},    # categorical variable from the set {"opt1", "opt2"}
+                    "z": set(range(4))})    # discrete variable from the set {0, 1, 2, 3}
 
 # initialise a BO optimiser
 bo = ht.BayesianOptimisation(domain=domain, minimise=True, batch_size=2)
