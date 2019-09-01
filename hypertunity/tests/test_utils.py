@@ -1,4 +1,5 @@
 import queue
+from typing import Union
 
 import pytest
 

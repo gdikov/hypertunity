@@ -28,7 +28,7 @@ classifiers = [
 
 setup(
     name="hypertunity",
-    version="0.2",
+    version="0.3dev1",
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",

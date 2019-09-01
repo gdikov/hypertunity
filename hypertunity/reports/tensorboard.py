@@ -103,30 +103,21 @@ class TensorboardReporter(Reporter):
                 sess.run(summary_scalar(metric_name, metric_value.value, step=1))
             sess.run(fw.flush())
 
-    def log(self, history: HistoryPoint, experiment_dir: str = None):
+    def _log_history_point(self, entry: HistoryPoint, experiment_dir: str = None):
         """Create an entry for a `HistoryPoint` in Tensorboard.
 
         Args:
-            history: `HistoryPoint`, the sample and evaluation metrics to log.
+            entry: `HistoryPoint`, the sample and evaluation metrics to log.
             experiment_dir: str, the directory name where to store all experiment related data.
                 It will be prefixed by the `logdir` path which is provided on initialisation
                 of the `TensorboardReporter`.
         """
-        converted = self._convert_to_hparams_sample(history.sample)
+        converted = self._convert_to_hparams_sample(entry.sample)
         if not experiment_dir:
             experiment_dir = f"experiment_{str(self._experiment_counter)}"
             self._experiment_counter += 1
         full_experiment_dir = os.path.join(self._logdir, experiment_dir)
         if EAGER_MODE:
-            self._log_tf_eager_mode(converted, history.metrics, full_experiment_dir)
+            self._log_tf_eager_mode(converted, entry.metrics, full_experiment_dir)
         else:
-            self._log_tf_graph_mode(converted, history.metrics, full_experiment_dir)
-
-    def from_history(self, history: List[HistoryPoint]):
-        """Create Tensorboard entries for all points in a history of evaluation samples.
-
-        Args:
-            history: list of `HistoryPoint`, the optimisation history to visualise.
-        """
-        for i, h in enumerate(history):
-            self.log(h, experiment_dir=str(i))
+            self._log_tf_graph_mode(converted, entry.metrics, full_experiment_dir)

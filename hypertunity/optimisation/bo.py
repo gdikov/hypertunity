@@ -1,5 +1,5 @@
 from multiprocessing import cpu_count
-from typing import List, Dict, Tuple, TypeVar, Any
+from typing import List, Dict, Tuple, TypeVar, Any, Sequence
 
 import GPyOpt
 import numpy as np
@@ -23,6 +23,8 @@ class BayesianOptimisation(Optimiser):
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
     CATEGORICAL_TYPE = "categorical"
+
+    DEFAULT_METRIC_NAME = "score"
 
     @utils.support_american_spelling
     def __init__(self, domain, minimise, batch_size=1, seed=None, **backend_kwargs):
@@ -195,16 +197,24 @@ class BayesianOptimisation(Optimiser):
         return next_samples
 
     def _update_one(self, x, fx):
-        if isinstance(fx, EvaluationScore):
-            self.history.append(HistoryPoint(sample=x, metrics={"score": fx}))
+        if isinstance(fx, (float, int)):
+            history_point = HistoryPoint(
+                sample=x, metrics={BayesianOptimisation.DEFAULT_METRIC_NAME: EvaluationScore(fx)})
+            array_fx = np.array([[fx]])
+        elif isinstance(fx, EvaluationScore):
+            history_point = HistoryPoint(
+                sample=x, metrics={BayesianOptimisation.DEFAULT_METRIC_NAME: fx})
             array_fx = np.array([[fx.value]])
         elif isinstance(fx, Dict):
-            assert len(fx) == 1, "Currently only evaluations with a single metric are supported."
-            self.history.append(HistoryPoint(sample=x, metrics=fx))
+            if not len(fx) == 1:
+                raise NotImplementedError("Currently only evaluations with a single metric are supported.")
+            history_point = HistoryPoint(sample=x, metrics=fx)
             array_fx = np.array([[list(fx.values())[0].value]])
         else:
             raise TypeError("Cannot update history for one sample and multiple evaluations. "
-                            "Use batched update instead and provide a list of samples and a list of evaluation metrics")
+                            "Use batched update instead and provide a list of samples "
+                            "and a list of evaluation metrics.")
+        self.history.append(history_point)
         converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
         return converted_x, array_fx
 
@@ -214,18 +224,18 @@ class BayesianOptimisation(Optimiser):
         Args:
             **kwargs:
             x: `Sample`, one sample of the domain of the objective function.
-            fx: either an `EvaluationScore` or a dict, mapping of metric names to `EvaluationScore`s
+            fx: either a float, an `EvaluationScore` or a dict, mapping metric names to `EvaluationScore`s
                 of the objective at `x`.
         """
         # both `converted_x` and `array_fx` must be 2dim arrays
         if isinstance(x, Sample):
             converted_x, array_fx = self._update_one(x, fx)
-        elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
+        elif isinstance(x, Sequence) and isinstance(fx, Sequence) and len(x) == len(fx):
             # append each history point to the tracked history and convert to numpy arrays
             converted_x, array_fx = map(np.concatenate, zip(*[self._update_one(i, j) for i, j in zip(x, fx)]))
         else:
             raise ValueError("Update values for `x` and `f(x)` must be either "
-                             "`Sample` and `EvaluationScore` or a list thereof.")
+                             "`Sample` and an evaluation or a list thereof.")
 
         if self._data_x.size == 0:
             self._data_x = converted_x

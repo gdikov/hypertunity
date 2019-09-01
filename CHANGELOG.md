@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Changed
+- any `Reporter` object can be fed with data from a tuple of a 
+`Sample` object and a score, which can be a float or an `EvaluationScore`.
+- `BayesianOptimisation` optimiser can be updated with a `Sample` and 
+a float or `EvaluationScore` objective evaluation types.
+
 ## [0.2.0] - 2019-08-28
 ## Added
 - `Scheduler` to run jobs locally using joblib.
@@ -24,8 +30,8 @@ All notable changes to this project will be documented in this file.
  
 ## [0.1.0] - 2019-07-27
 ### Added
-- `TensorboardReporter` result logger using `HParams`
-- `GpyOpt` backend for `BayesianOptimisation`
-- `RandomSearch` optimiser
-- `GridSearch` optimiser
-- `Domain` and `Sample` classes as foundations for the optimisers
+- `TensorboardReporter` result logger using `HParams`.
+- `GpyOpt` backend for `BayesianOptimisation`.
+- `RandomSearch` optimiser.
+- `GridSearch` optimiser.
+- `Domain` and `Sample` classes as foundations for the optimisers.

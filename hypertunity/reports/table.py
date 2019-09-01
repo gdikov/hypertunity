@@ -37,24 +37,15 @@ class TableReporter(Reporter):
         """Return the table as a numpy array."""
         return np.array(self._table)
 
-    def log(self, history: HistoryPoint, **kwargs: Any):
+    def _log_history_point(self, entry: HistoryPoint, **kwargs: Any):
         """Create an entry for a `HistoryPoint` in a table.
 
         Args:
-            history: `HistoryPoint`, the sample and evaluation metrics to log.
+            entry: `HistoryPoint`, the sample and evaluation metrics to log.
         """
         id_ = len(self._table)
-        row = [id_ + 1, *history.sample.flatten().values(), *history.metrics.values()]
+        row = [id_ + 1, *entry.sample.flatten().values(), *entry.metrics.values()]
         self._table.append_row(row)
-
-    def from_history(self, history: List[HistoryPoint]):
-        """Load the table with data from a history of evaluations.
-
-        Args:
-            history: list of `HistoryPoint`, the evaluations comprised of samples and metrics.
-        """
-        for h in history:
-            self.log(h)
 
     @utils.support_american_spelling
     def format(self, order: str = "none", emphasise: bool = False) -> str:
