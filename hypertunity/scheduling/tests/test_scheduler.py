@@ -1,6 +1,7 @@
 import os
-import pytest
 import tempfile
+
+import pytest
 
 import hypertunity as ht
 from . import script
@@ -22,10 +23,20 @@ def _run_jobs(jobs):
 
 
 @pytest.mark.timeout(10.0)
-def test_local_from_script():
+def test_local_from_script_and_function():
+    domain = ht.Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}}, seed=7)
+    jobs = [Job(task="hypertunity/scheduling/tests/script.py::main",
+                args=(*domain.sample().as_namedtuple(),)) for _ in range(10)]
+    results = _run_jobs(jobs)
+    assert all([r.data == script.main(*j.args) for r, j in zip(results, jobs)])
+
+
+@pytest.mark.timeout(10.0)
+def test_local_from_script_and_cmdline_args():
     domain = ht.Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}}, seed=7)
     jobs = [Job(task="hypertunity/scheduling/tests/script.py",
-                args=(*domain.sample().as_namedtuple(),)) for _ in range(10)]
+                args=(*domain.sample().as_namedtuple(),),
+                meta={"binary": "python"}) for _ in range(10)]
     results = _run_jobs(jobs)
     assert all([r.data == script.main(*j.args) for r, j in zip(results, jobs)])
 
@@ -58,4 +69,3 @@ def test_slurm_from_script():
     # clean-up the temporary dirs
     for d in dirs:
         d.cleanup()
-

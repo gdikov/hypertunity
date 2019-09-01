@@ -3,12 +3,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Added
+- `Job` can now be scheduled locally to run command line scripts with arguments.
+
 ## Changed
 - any `Reporter` object can be fed with data from a tuple of a 
 `Sample` object and a score, which can be a float or an `EvaluationScore`.
 - `BayesianOptimisation` optimiser can be updated with a `Sample` and 
 a float or `EvaluationScore` objective evaluation types.
 - a discrete/categorical `Domain` is defined with a set literal instead of a tuple.
+- `Job` supports running functions from within a script by specifying 'script_path::func_name'. 
 
 ## [0.2.0] - 2019-08-28
 ## Added
