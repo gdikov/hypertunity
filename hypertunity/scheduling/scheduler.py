@@ -28,7 +28,7 @@ class Scheduler:
         """
         self._job_queue = mp.Queue()
         self._result_queue = mp.Queue()
-        self._is_closed = False
+        self._is_queue_closed = False
 
         if n_parallel is None:
             self.n_parallel = -2  # using all CPUs but 1
@@ -42,25 +42,18 @@ class Scheduler:
         """Clean up subprocess on object deletion.
         Close the queues and join all subprocesses before the object is deleted.
         """
-        if not self._is_closed:
+        if not self._is_queue_closed:
             self.exit()
         if self._servant.is_alive():
             self._servant.terminate()
 
     def __enter__(self):
-        """Run the servant subprocess on context creation."""
+        """Enter the context manager."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Interrupt and terminate the servant process."""
+        """Exit the context manager."""
         self.exit()
-        self._interrupt_event.set()
-        # wait a bit for the subprocess to exit gracefully
-        n_retries = 3
-        while self._servant.is_alive() and n_retries > 0:
-            n_retries -= 1
-            time.sleep(0.05)
-        self._servant.terminate()
 
     def _run_servant(self):
         """Run the pool of workers on the dispatched jobs, fetched from the job queue and
@@ -132,10 +125,17 @@ class Scheduler:
         self._interrupt_event.set()
 
     def exit(self):
-        """Exit the scheduler by closing the queues and cleaning-up."""
-        if not self._is_closed:
+        """Exit the scheduler by closing the queues and terminating the servant process."""
+        if not self._is_queue_closed:
             utils.drain_queue(self._job_queue, close_queue=True)
             self._job_queue.join_thread()
             utils.drain_queue(self._result_queue, close_queue=True)
             self._result_queue.join_thread()
-            self._is_closed = True
+            self._is_queue_closed = True
+        self.interrupt()
+        # wait a bit for the subprocess to exit gracefully
+        n_retries = 3
+        while self._servant.is_alive() and n_retries > 0:
+            n_retries -= 1
+            time.sleep(0.05)
+        self._servant.terminate()

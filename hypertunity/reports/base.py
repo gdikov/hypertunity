@@ -4,6 +4,10 @@ from typing import List, Any, Union, Tuple, Dict
 from hypertunity.optimisation.base import HistoryPoint, EvaluationScore
 from hypertunity.optimisation.domain import Domain, Sample
 
+__all__ = [
+    "Reporter"
+]
+
 HistoryEntryType = Union[
     HistoryPoint,
     Tuple[Sample, Union[float, Dict[str, float], Dict[str, EvaluationScore]]]
