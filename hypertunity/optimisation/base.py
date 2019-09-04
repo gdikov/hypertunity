@@ -3,7 +3,7 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 from hypertunity.optimisation.domain import Domain, Sample
 
@@ -43,20 +43,14 @@ class Optimiser:
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
 
-    def __init__(self, domain: Domain, batch_size: int = 1):
+    def __init__(self, domain: Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
         Args:
             domain: `Domain`, the objective function's optimisation domain.
-            batch_size: int, the number of samples to suggest at one step of `run_step`.
         """
         self.domain = domain
-        self._batch_size = batch_size
         self._history: List[HistoryPoint] = []
-
-    @property
-    def batch_size(self):
-        return self._batch_size
 
     @property
     def history(self):
@@ -64,10 +58,11 @@ class Optimiser:
         return self._history
 
     @abc.abstractmethod
-    def run_step(self, *args, **kwargs) -> List[Sample]:
+    def run_step(self, batch_size: int = 1, *args: Any, **kwargs: Any) -> List[Sample]:
         """Perform one step of optimisation and suggest the next sample to evaluate.
 
         Args:
+            batch_size: int, the number of samples to suggest at one step of `run_step`.
             *args: optional arguments for the Optimiser.
             **kwargs: optional keyword arguments for the Optimiser.
 

@@ -1,4 +1,4 @@
-"""Optimisation by exhaustive search, e.g. regular grid or list search."""
+"""Optimisation by exhaustive search, aka grid search."""
 
 from typing import List
 
@@ -16,14 +16,13 @@ class ExhaustedSearchSpaceError(Exception):
 
 
 class GridSearch(Optimiser):
-    def __init__(self, domain, batch_size=1, sample_continuous=False, seed=None):
+    def __init__(self, domain: Domain, sample_continuous: bool = False, seed: int = None):
         """Initialise the GridSearch optimiser from a discrete domain.
 
         If the domain contains continuous subspaces, then they could be sampled if `sample_continuous` is enabled.
 
         Args:
             domain: `Domain`, the domain to iterate over.
-            batch_size: int, the number of samples to supply at each step.
             sample_continuous: bool, whether to sample the continuous subspaces of the domain.
             seed: optional int, seed the sampling of the continuous subspace.
         """
@@ -31,7 +30,7 @@ class GridSearch(Optimiser):
             raise DomainNotIterableError(
                 "Cannot perform grid search on (partially) continuous domain. "
                 "To enable grid search in this case, set 'sample_continuous' to True.")
-        super(GridSearch, self).__init__(domain, batch_size)
+        super(GridSearch, self).__init__(domain)
         discrete_domain, categorical_domain, continuous_domain = domain.split_by_type()
         # unify the discrete and the categorical into one, as they can be iterated:
         self.discrete_domain = discrete_domain + categorical_domain
@@ -44,8 +43,11 @@ class GridSearch(Optimiser):
         self.__exhausted_err = ExhaustedSearchSpaceError(
             "The domain has been exhausted. Reset the optimiser to start again.")
 
-    def run_step(self) -> List[Sample]:
+    def run_step(self, batch_size: int = 1, **kwargs) -> List[Sample]:
         """Get the next `batch_size` samples from the Cartesian-product walk over the domain.
+
+        Args:
+            batch_size: int, the number of samples to suggest at once.
 
         Returns:
             A list of `Sample`s from the domain.
@@ -55,7 +57,7 @@ class GridSearch(Optimiser):
             no samples can be generated.
 
         Notes:
-            This method does not guarantee that the returned list of Samples will be of a `batch_size` size.
+            This method does not guarantee that the returned list of Samples will be of a `batch_size` length.
             This is due to the fixed size of the domain. If it gets exhausted during batch generation,
             the method will return the remaining samples to be evaluated.
         """
@@ -63,7 +65,7 @@ class GridSearch(Optimiser):
             raise self.__exhausted_err
 
         samples = []
-        for i in range(self.batch_size):
+        for i in range(batch_size):
             try:
                 discrete = next(self._discrete_domain_iter)
             except StopIteration:

@@ -55,11 +55,11 @@ def simple_discrete_func(x, y, z):
     return 0.15 * x * y
 
 
-def evaluate_simple_continuous(opt, n_steps):
+def evaluate_simple_continuous(opt, batch_size, n_steps):
     all_samples = []
     all_evaluations = []
     for i in range(n_steps):
-        samples = opt.run_step()
+        samples = opt.run_step(batch_size)
         evaluations = simple_continuous_func(np.array([s["x"] for s in samples]))
         opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
@@ -72,11 +72,11 @@ def evaluate_simple_continuous(opt, n_steps):
     assert np.isclose(best_eval, SIMPLE_CONT_FUNC_MAX, atol=1e-1)
 
 
-def evaluate_simple_mixed(opt, n_steps):
+def evaluate_simple_mixed(opt, batch_size, n_steps):
     all_samples = []
     all_evaluations = []
     for i in range(n_steps):
-        samples = opt.run_step()
+        samples = opt.run_step(batch_size)
         evaluations = [simple_mixed_func(s["x"], s["y"], s["z"]) for s in samples]
         opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
@@ -90,11 +90,11 @@ def evaluate_simple_mixed(opt, n_steps):
     assert np.isclose(best_eval, SIMPLE_MIXED_FUNC_MAX, atol=1.0)
 
 
-def evaluate_simple_discrete(opt, n_steps):
+def evaluate_simple_discrete(opt, batch_size, n_steps):
     all_samples = []
     all_evaluations = []
     for i in range(n_steps):
-        samples = opt.run_step()
+        samples = opt.run_step(batch_size)
         evaluations = [simple_discrete_func(s["x"], s["y"], s["z"]) for s in samples]
         opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment

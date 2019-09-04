@@ -12,7 +12,8 @@ All notable changes to this project will be documented in this file.
 - `BayesianOptimisation` optimiser can be updated with a `Sample` and 
 a float or `EvaluationScore` objective evaluation types.
 - a discrete/categorical `Domain` is defined with a set literal instead of a tuple.
-- `Job` supports running functions from within a script by specifying 'script_path::func_name'. 
+- `Job` supports running functions from within a script by specifying 'script_path::func_name'.
+- `batch_size` is no more an attribute of an `Optimiser` but an argument to `run_step`. 
 
 ## [0.2.0] - 2019-08-28
 ## Added

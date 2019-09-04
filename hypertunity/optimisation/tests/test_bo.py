@@ -7,8 +7,8 @@ from . import _common as test_utils
 
 def test_bo_update_and_reset():
     domain = ht.Domain({"a": {"b": [2, 3]}, "c": [0, 0.1]})
-    bo = ht.BayesianOptimisation(domain, minimise=True, batch_size=1)
-    samples = bo.run_step()
+    bo = ht.BayesianOptimisation(domain, minimise=True)
+    samples = bo.run_step(batch_size=1)
     n_reps = 3
     for i in range(n_reps):
         bo.update(samples[0], ht.EvaluationScore(2. * i), )
@@ -25,9 +25,8 @@ def test_bo_simple_continuous():
     bo = ht.BayesianOptimization(
         domain=domain,
         minimise=False,
-        batch_size=2,
         seed=7)
-    test_utils.evaluate_simple_continuous(bo, n_steps=7)
+    test_utils.evaluate_simple_continuous(bo, batch_size=2, n_steps=7)
 
 
 @pytest.mark.slow
@@ -35,7 +34,6 @@ def test_bo_simple_mixed():
     domain = ht.Domain({"x": [-5., 6.], "y": {"sin", "sqr"}, "z": set(range(4))})
     bo = ht.BayesianOptimization(
         domain=domain,
-        batch_size=7,
         minimise=False,
         seed=7)
-    test_utils.evaluate_simple_mixed(bo, n_steps=3)
+    test_utils.evaluate_simple_mixed(bo, batch_size=7, n_steps=3)

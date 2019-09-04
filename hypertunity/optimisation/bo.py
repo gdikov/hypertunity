@@ -1,3 +1,5 @@
+"""Bayesian Optimisation using Gaussian Process regression."""
+
 from multiprocessing import cpu_count
 from typing import List, Dict, Tuple, TypeVar, Any, Sequence
 
@@ -20,6 +22,7 @@ GPyOptCategoricalValueMapper = Dict[str, Dict[Any, int]]
 
 class BayesianOptimisation(Optimiser):
     """Bayesian Optimiser using GPyOpt as a backend."""
+
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
     CATEGORICAL_TYPE = "categorical"
@@ -27,18 +30,13 @@ class BayesianOptimisation(Optimiser):
     DEFAULT_METRIC_NAME = "score"
 
     @utils.support_american_spelling
-    def __init__(self, domain, minimise, batch_size=1, seed=None, **backend_kwargs):
+    def __init__(self, domain, minimise, seed=None):
         """Initialise the BO's domain and other options.
 
         Args:
             domain: `Domain` object defining the domain of the objective
             minimise: bool, whether the objective should be minimised
-            batch_size: int, the number of samples to suggest at once. If more than one,
-                there is no guarantee for optimality.
             seed: optional, int to seed the BO for reproducibility.
-
-        Keyword Args:
-            backend_kwargs: additional kwargs supplied to initialise a `GPyOpt.methods.BayesianOptimisation` object.
 
         Notes:
              No objective function is specified for the `GPyOpt.methods.BayesianOptimisation` object as the evaluation
@@ -46,17 +44,11 @@ class BayesianOptimisation(Optimiser):
         """
         np.random.seed(seed)
         domain = Domain(domain.as_dict(), seed=seed)
-        super(BayesianOptimisation, self).__init__(domain, batch_size)
+        super(BayesianOptimisation, self).__init__(domain)
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
                                               for name, mapping in self._categorical_value_mapper.items()}
         self._minimise = minimise
-        self._num_cores = min(self.batch_size, cpu_count() - 1)
-        if batch_size > 1:
-            self._evaluation_type = "local_penalization"
-        else:
-            self._evaluation_type = "sequential"
-        self._backend_kwargs = backend_kwargs
         self._data_x = np.array([[]])
         self._data_fx = np.array([[]])
         self.__is_empty_data = True
@@ -162,19 +154,28 @@ class BayesianOptimisation(Optimiser):
         """Build the acquisition function."""
         return "EI"
 
-    def run_step(self, *args, **kwargs) -> List[Sample]:
+    def run_step(self, batch_size: int = 1, **kwargs) -> List[Sample]:
         """Run one step of Bayesian optimisation with a GP regression surrogate model.
 
         The first sample of the domain is chosen at random. Only after the model has been updated with at least one
         (data point, evaluation score)-pair the GPs are built and the acquisition function computed and optimised.
 
+        Args:
+            batch_size: int, the number of samples to suggest at once. If more than one,
+                there is no guarantee for optimality.
+            **kwargs: optional kwargs to initialise a `GPyOpt.methods.BayesianOptimisation` object.
+
         Returns:
             A list of `self.batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
         """
         if self.__is_empty_data:
-            next_samples = [self.domain.sample() for _ in range(self.batch_size)]
+            next_samples = [self.domain.sample() for _ in range(batch_size)]
         else:
             assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise a BO method from empty data."
+            if batch_size > 1:
+                evaluation_type = "local_penalization"
+            else:
+                evaluation_type = "sequential"
             # NOTE: as of GPyOpt 1.2.5 adding new data to an existing model is not yet possible,
             #  hence the object recreation. This behaviour might be changed in future versions.
             #  In this case the code should be refactored such that `bo` is initialised once and `update` takes
@@ -185,13 +186,13 @@ class BayesianOptimisation(Optimiser):
                 X=self._data_x,
                 Y=(-1 + 2 * self._minimise) * self._data_fx,  # this hack is necessary due to a bug in GPyOpt
                 initial_design_numdata=len(self._data_x),
-                batch_size=self.batch_size,
-                num_cores=self._num_cores,
-                evaluator_type=self._evaluation_type,
+                batch_size=batch_size,
+                num_cores=min(batch_size, cpu_count() - 1),
+                evaluator_type=evaluation_type,
                 model_type=self._build_model(),
                 acquisition_type=self._build_acquisition(),
                 de_duplication=True,
-                **self._backend_kwargs)
+                **kwargs)
             gpyopt_samples = bo.suggest_next_locations()
             next_samples = [self._convert_from_gpyopt_sample(s) for s in gpyopt_samples]
         return next_samples

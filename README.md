@@ -38,7 +38,7 @@ domain = ht.Domain({"x": [-5., 6.],           # continuous variable within the i
                     "z": set(range(4))})    # discrete variable from the set {0, 1, 2, 3}
 
 # initialise a BO optimiser
-bo = ht.BayesianOptimisation(domain=domain, minimise=True, batch_size=2)
+bo = ht.BayesianOptimisation(domain=domain, minimise=True)
 ```
 
 Run the optimisation for 10 steps, while updating the optimiser:
@@ -47,7 +47,7 @@ Run the optimisation for 10 steps, while updating the optimiser:
 n_steps = 10
 for i in range(n_steps):
     # suggest next samples from the domain
-    samples = bo.run_step()
+    samples = bo.run_step(batch_size=2)
     # evaluate the costly objective `foo`
     evaluations = [foo(s) for s in samples]
     # update the optimiser with the results
