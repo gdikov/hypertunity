@@ -8,7 +8,7 @@ def test_random_simple_continuous():
     rs = RandomSearch(
         domain=domain,
         seed=7)
-    test_utils.evaluate_simple_continuous(rs, batch_size=50, n_steps=2)
+    test_utils.evaluate_continuous_1d(rs, batch_size=50, n_steps=2)
 
 
 def test_random_simple_mixed():
@@ -16,4 +16,4 @@ def test_random_simple_mixed():
     rs = RandomSearch(
         domain=domain,
         seed=1)
-    test_utils.evaluate_simple_mixed(rs, batch_size=50, n_steps=25)
+    test_utils.evaluate_heterogeneous_3d(rs, batch_size=50, n_steps=25)

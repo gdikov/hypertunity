@@ -1,4 +1,3 @@
-import functools
 import queue
 
 GB_US_SPELLING = {

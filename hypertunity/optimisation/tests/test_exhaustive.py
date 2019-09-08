@@ -8,7 +8,7 @@ from . import _common as test_utils
 def test_grid_simple_discrete():
     domain = opt.Domain({"x": {1, 2, 3, 4}, "y": {-3, 2, 5}, "z": {"small", "large"}})
     gs = GridSearch(domain=domain)
-    test_utils.evaluate_simple_discrete(gs, batch_size=4, n_steps=3 * 2)
+    test_utils.evaluate_discrete_3d(gs, batch_size=4, n_steps=3 * 2)
     with pytest.raises(ExhaustedSearchSpaceError):
         gs.run_step(batch_size=4)
     gs.reset()

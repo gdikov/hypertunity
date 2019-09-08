@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 - `Job` can now be scheduled locally to run command line scripts with arguments.
+- `BayesianOptimisation.run_step` can pass arguments to the backend for better customisation.
 
 ## Changed
 - any `Reporter` object can be fed with data from a tuple of a 
@@ -14,6 +15,7 @@ a float or `EvaluationScore` objective evaluation types.
 - a discrete/categorical `Domain` is defined with a set literal instead of a tuple.
 - `Job` supports running functions from within a script by specifying 'script_path::func_name'.
 - `batch_size` is no more an attribute of an `Optimiser` but an argument to `run_step`. 
+- `minimise` is no more an attribute of `BayesianOptimisation` but an argument to `run_step`.
 
 ## [0.2.0] - 2019-08-28
 ## Added

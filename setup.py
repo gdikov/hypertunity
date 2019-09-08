@@ -1,12 +1,13 @@
 from setuptools import setup, find_packages
 
 required_packages = [
+    "beautifultable>=0.7.0",
     "dataclasses;python_version<'3.7'",
-    "numpy>=1.16",
+    "gpy==1.9.8",
     "gpyopt==1.2.5",
-    "matplotlib>=3.0",
     "joblib>=0.13.2",
-    "beautifultable>=0.7.0"
+    "matplotlib>=3.0",
+    "numpy>=1.16"
 ]
 
 extras = {
@@ -28,7 +29,7 @@ classifiers = [
 
 setup(
     name="hypertunity",
-    version="0.3dev2",
+    version="0.3dev3",
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",

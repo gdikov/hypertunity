@@ -1,8 +1,9 @@
 """Bayesian Optimisation using Gaussian Process regression."""
 
 from multiprocessing import cpu_count
-from typing import List, Dict, Tuple, TypeVar, Any, Sequence
+from typing import List, Dict, Tuple, TypeVar, Any, Sequence, Union, Type
 
+import GPy
 import GPyOpt
 import numpy as np
 
@@ -29,13 +30,11 @@ class BayesianOptimisation(Optimiser):
 
     DEFAULT_METRIC_NAME = "score"
 
-    @utils.support_american_spelling
-    def __init__(self, domain, minimise, seed=None):
+    def __init__(self, domain, seed=None):
         """Initialise the BO's domain and other options.
 
         Args:
             domain: `Domain` object defining the domain of the objective
-            minimise: bool, whether the objective should be minimised
             seed: optional, int to seed the BO for reproducibility.
 
         Notes:
@@ -48,7 +47,6 @@ class BayesianOptimisation(Optimiser):
         self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
                                               for name, mapping in self._categorical_value_mapper.items()}
-        self._minimise = minimise
         self._data_x = np.array([[]])
         self._data_fx = np.array([[]])
         self.__is_empty_data = True
@@ -138,23 +136,8 @@ class BayesianOptimisation(Optimiser):
                 sub_dim[names[-1]] = value
         return Sample(orig_sample)
 
-    def _build_model(self):
-        """Build the surrogate model for the GPyOpt BayesianOptimisation.
-
-        The default model is 'GP'. In case of a large number of already evaluated samples,
-        a 'sparseGP' is used to speed up computation.
-        """
-        # TODO: improve with a custom generic kernel or task-specific one.
-        #  Account for noise in observations (possibly heteroscedastic).
-        if len(self._data_x) > 25:
-            return "sparseGP"
-        return "GP"
-
-    def _build_acquisition(self):
-        """Build the acquisition function."""
-        return "EI"
-
-    def run_step(self, batch_size: int = 1, **kwargs) -> List[Sample]:
+    @utils.support_american_spelling
+    def run_step(self, batch_size: int = 1, minimise: bool = False, **kwargs) -> List[Sample]:
         """Run one step of Bayesian optimisation with a GP regression surrogate model.
 
         The first sample of the domain is chosen at random. Only after the model has been updated with at least one
@@ -163,39 +146,93 @@ class BayesianOptimisation(Optimiser):
         Args:
             batch_size: int, the number of samples to suggest at once. If more than one,
                 there is no guarantee for optimality.
-            **kwargs: optional kwargs to initialise a `GPyOpt.methods.BayesianOptimisation` object.
+            minimise: bool, whether the objective should be minimised
+            **kwargs: optional keyword arguments which will be passed to the
+                backend `GPyOpt.methods.BayesianOptimisation` optimiser.
+
+        Keyword Args:
+            model: str or `GPy.Model` object, the surrogate model used by the backend optimiser.
+            kernel: `GPy.Kern` object, the kernel used by the model.
+            variance: float, the variance of the objective function.
+
 
         Returns:
-            A list of `self.batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
+            A list of `batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
         """
         if self.__is_empty_data:
             next_samples = [self.domain.sample() for _ in range(batch_size)]
         else:
             assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise a BO method from empty data."
-            if batch_size > 1:
-                evaluation_type = "local_penalization"
-            else:
-                evaluation_type = "sequential"
+            default_kwargs = {
+                "num_cores": min(batch_size, cpu_count() - 1),
+                "normalize_Y": True,
+                "acquisition_type": "EI",
+                "de_duplication": True,
+                "model_type": "GP",
+                "evaluator_type": "local_penalization" if batch_size > 1 else "sequential"
+            }
+            if "model" in kwargs:
+                model = kwargs.pop("model")
+                # NOTE: Remove this test for model type after the bug in GPyOpt is fixed:
+                #  https://github.com/SheffieldML/GPyOpt/issues/183
+                if isinstance(model, str) and model.lower() == "gp_mcmc" and batch_size > 1:
+                    raise ValueError("GP_MCMC model cannot be used with a batch size > 1 due to a bug in "
+                                     "GPyOpt: https://github.com/SheffieldML/GPyOpt/issues/183")
+                kernel = kwargs.pop("kernel", None)
+                variance = kwargs.pop("variance", None)
+                default_kwargs["model"] = self._build_model(model, kernel, variance)
+                if variance is not None and all(np.atleast_1d(np.isclose(variance, 0.0))):
+                    default_kwargs["exact_feval"] = True
+            default_kwargs = _overwrite_dict(default_kwargs, kwargs)
+
             # NOTE: as of GPyOpt 1.2.5 adding new data to an existing model is not yet possible,
             #  hence the object recreation. This behaviour might be changed in future versions.
             #  In this case the code should be refactored such that `bo` is initialised once and `update` takes
             #  care of the extension of the (X, Y) samples.
             bo = GPyOpt.methods.BayesianOptimization(
                 f=None, domain=self.gpyopt_domain,
-                maximize=not self._minimise,
+                maximize=not minimise,
                 X=self._data_x,
-                Y=(-1 + 2 * self._minimise) * self._data_fx,  # this hack is necessary due to a bug in GPyOpt
+                # NOTE: the following hack is necessary due to a bug in GPyOpt. The code should be updated
+                #  once this gets fixed: https://github.com/SheffieldML/GPyOpt/issues/180
+                Y=(-1 + 2 * minimise) * self._data_fx,
                 initial_design_numdata=len(self._data_x),
                 batch_size=batch_size,
-                num_cores=min(batch_size, cpu_count() - 1),
-                evaluator_type=evaluation_type,
-                model_type=self._build_model(),
-                acquisition_type=self._build_acquisition(),
-                de_duplication=True,
-                **kwargs)
+                **default_kwargs)
             gpyopt_samples = bo.suggest_next_locations()
             next_samples = [self._convert_from_gpyopt_sample(s) for s in gpyopt_samples]
         return next_samples
+
+    def _build_model(self, model: Union[str, Type[GPy.Model]] = "GP",
+                     kernel: GPy.kern.Kern = None,
+                     variance: float = None):
+        """Build the surrogate model for the GPyOpt BayesianOptimisation.
+
+        The default model is 'gp'. In case of a large number of already evaluated samples,
+        a 'sparse_gp' is used to speed up computation.
+
+        Args:
+            model: str or `GPy.Model`, the GP regression model.
+            kernel: `GPy.kern.Kern`, the kernel of the GP regression model.
+            variance: float, the variance of the evaluations (used only if supported by the model).
+
+        Returns:
+            A `GPy.Model` instance.
+        """
+        if isinstance(model, GPy.Model):
+            return model
+        if isinstance(model, str):
+            model = model.lower()
+            if model == "gp":
+                return GPyOpt.models.GPModel(kernel=kernel, noise_var=variance,
+                                             sparse=len(self._data_x) > 25)
+            if model == "gp_mcmc":
+                return GPyOpt.models.GPModel_MCMC(kernel=kernel, noise_var=variance)
+            raise ValueError(f"Unknown model {model}. When supplying a custom kernel or "
+                             f"the variance of the objective function, the model has to be "
+                             f"one from {{'GP', 'GP_MCMC'}}. Otherwise you should supply a "
+                             f"custom `GPy.Model` instance.")
+        raise TypeError("Argument `model` must be of type str or `GPy.Model`.")
 
     def _update_one(self, x, fx):
         if isinstance(fx, (float, int)):
@@ -255,3 +292,14 @@ class BayesianOptimisation(Optimiser):
 
 
 BayesianOptimization = BayesianOptimisation
+
+
+def _overwrite_dict(old_dict, new_dict):
+    updated_old = {}
+    # copy the old dict
+    for key, value in old_dict.items():
+        updated_old[key] = value
+    # overwrite the existing and add the new values
+    for key, value in new_dict.items():
+        updated_old[key] = value
+    return updated_old
