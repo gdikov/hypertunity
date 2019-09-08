@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2019-09-08
 ## Added
 - `Job` can now be scheduled locally to run command line scripts with arguments.
 - `BayesianOptimisation.run_step` can pass arguments to the backend for better customisation.
