@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.1] - 2019-09-10
+## Fixed
+- `Optimiser.update()` now accepts evaluation arguments that are float, `EvaluationScore` or a dict
+ with metric names and floats or `EvaluationScore`s. This is valid for all optimisers. 
+
 ## [0.3.0] - 2019-09-08
 ## Added
 - `Job` can now be scheduled locally to run command line scripts with arguments.
