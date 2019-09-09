@@ -17,3 +17,14 @@ def test_random_simple_mixed():
         domain=domain,
         seed=1)
     test_utils.evaluate_heterogeneous_3d(rs, batch_size=50, n_steps=25)
+
+
+def test_update():
+    domain = Domain({"x": [-5., 6.]})
+    rs = RandomSearch(domain)
+    rs.update([domain.sample() for _ in range(4)], list(range(4)))
+    rs.update(domain.sample(), {"score": 23.0})
+    rs.update(domain.sample(), 2.0)
+    assert len(rs.history) == 6
+    rs.reset()
+    assert len(rs.history) == 0

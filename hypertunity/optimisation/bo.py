@@ -8,7 +8,7 @@ import GPyOpt
 import numpy as np
 
 from hypertunity import utils
-from hypertunity.optimisation.base import Optimiser, EvaluationScore, HistoryPoint
+from hypertunity.optimisation.base import Optimiser, EvaluationScore
 from hypertunity.optimisation.domain import Domain, Sample
 
 __all__ = [
@@ -27,8 +27,6 @@ class BayesianOptimisation(Optimiser):
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
     CATEGORICAL_TYPE = "categorical"
-
-    DEFAULT_METRIC_NAME = "score"
 
     def __init__(self, domain, seed=None):
         """Initialise the BO's domain and other options.
@@ -234,43 +232,23 @@ class BayesianOptimisation(Optimiser):
                              f"custom `GPy.Model` instance.")
         raise TypeError("Argument `model` must be of type str or `GPy.Model`.")
 
-    def _update_one(self, x, fx):
-        if isinstance(fx, (float, int)):
-            history_point = HistoryPoint(
-                sample=x, metrics={BayesianOptimisation.DEFAULT_METRIC_NAME: EvaluationScore(fx)})
-            array_fx = np.array([[fx]])
-        elif isinstance(fx, EvaluationScore):
-            history_point = HistoryPoint(
-                sample=x, metrics={BayesianOptimisation.DEFAULT_METRIC_NAME: fx})
-            array_fx = np.array([[fx.value]])
-        elif isinstance(fx, Dict):
-            if not len(fx) == 1:
-                raise NotImplementedError("Currently only evaluations with a single metric are supported.")
-            history_point = HistoryPoint(sample=x, metrics=fx)
-            array_fx = np.array([[list(fx.values())[0].value]])
-        else:
-            raise TypeError("Cannot update history for one sample and multiple evaluations. "
-                            "Use batched update instead and provide a list of samples "
-                            "and a list of evaluation metrics.")
-        self.history.append(history_point)
-        converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
-        return converted_x, array_fx
-
     def update(self, x, fx, **kwargs):
         """Update the surrogate model with the domain sample `x` and the function evaluation `fx`.
 
         Args:
-            **kwargs:
             x: `Sample`, one sample of the domain of the objective function.
             fx: either a float, an `EvaluationScore` or a dict, mapping metric names to `EvaluationScore`s
                 of the objective at `x`.
+            **kwargs: unused by this model.
         """
+        super(BayesianOptimisation, self).update(x, fx)
         # both `converted_x` and `array_fx` must be 2dim arrays
         if isinstance(x, Sample):
-            converted_x, array_fx = self._update_one(x, fx)
+            converted_x, array_fx = self._convert_evaluation_sample(x, fx)
         elif isinstance(x, Sequence) and isinstance(fx, Sequence) and len(x) == len(fx):
             # append each history point to the tracked history and convert to numpy arrays
-            converted_x, array_fx = map(np.concatenate, zip(*[self._update_one(i, j) for i, j in zip(x, fx)]))
+            converted_x, array_fx = map(
+                np.concatenate, zip(*[self._convert_evaluation_sample(i, j) for i, j in zip(x, fx)]))
         else:
             raise ValueError("Update values for `x` and `f(x)` must be either "
                              "`Sample` and an evaluation or a list thereof.")
@@ -282,6 +260,22 @@ class BayesianOptimisation(Optimiser):
             self._data_x = np.concatenate([self._data_x, converted_x])
             self._data_fx = np.concatenate([self._data_fx, array_fx])
         self.__is_empty_data = False
+
+    def _convert_evaluation_sample(self, x, fx):
+        if isinstance(fx, (float, int)):
+            array_fx = np.array([[fx]])
+        elif isinstance(fx, EvaluationScore):
+            array_fx = np.array([[fx.value]])
+        elif isinstance(fx, Dict):
+            if not len(fx) == 1:
+                raise NotImplementedError("Currently only evaluations with a single metric are supported.")
+            array_fx = np.array([[list(fx.values())[0].value]])
+        else:
+            raise TypeError("Cannot update history for one sample and multiple evaluations. "
+                            "Use batched update instead and provide a list of samples "
+                            "and a list of evaluation metrics.")
+        converted_x = self._convert_to_gpyopt_sample(x).reshape(1, -1)
+        return converted_x, array_fx
 
     def reset(self):
         """Reset the optimiser for a fresh start."""

@@ -3,7 +3,7 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Any, Sequence
 
 from hypertunity.optimisation.domain import Domain, Sample
 
@@ -43,6 +43,8 @@ class Optimiser:
     The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
     """
 
+    DEFAULT_METRIC_NAME = "score"
+
     def __init__(self, domain: Domain):
         """Initialise the base optimiser class with a domain and direction of optimisation.
 
@@ -77,15 +79,37 @@ class Optimiser:
 
         Args:
             x: `Sample`, one sample of the domain of the objective function.
-            fx: `EvaluationScore`, the evaluation score of the objective at `x`
+            fx: `EvaluationScore`, the evaluation score of the objective at `x`.
         """
-        if isinstance(x, Sample) and isinstance(fx, EvaluationScore):
-            self.history.append(HistoryPoint(sample=x, metrics={"score": fx}))
-        elif isinstance(x, (List, Tuple)) and isinstance(fx, (List, Tuple)) and len(x) == len(fx):
-            self.history.extend([HistoryPoint(sample=i, metrics=j) for i, j in zip(x, fx)])
+        if isinstance(x, Sample):
+            self._update_history(x, fx)
+        elif isinstance(x, Sequence) and isinstance(fx, Sequence) and len(x) == len(fx):
+            for i, j in zip(x, fx):
+                self._update_history(i, j)
         else:
             raise ValueError("Update values for `x` and `f(x)` must be either "
-                             "`Sample` and `EvaluationScore` or a list thereof.")
+                             "a `Sample` and an evaluation or a list thereof.")
+
+    def _update_history(self, x, fx):
+        if isinstance(fx, (float, int)):
+            history_point = HistoryPoint(
+                sample=x, metrics={self.DEFAULT_METRIC_NAME: EvaluationScore(fx)})
+        elif isinstance(fx, EvaluationScore):
+            history_point = HistoryPoint(
+                sample=x, metrics={self.DEFAULT_METRIC_NAME: fx})
+        elif isinstance(fx, Dict):
+            metrics = {}
+            for key, val in fx.items():
+                if isinstance(val, (float, int)):
+                    metrics[key] = EvaluationScore(val)
+                else:
+                    metrics[key] = val
+            history_point = HistoryPoint(sample=x, metrics=metrics)
+        else:
+            raise TypeError("Cannot update history for one sample and multiple evaluations. "
+                            "Use batched update instead and provide a list of samples "
+                            "and a list of evaluation metrics.")
+        self.history.append(history_point)
 
     def reset(self):
         """Reset the optimiser to the initial state."""

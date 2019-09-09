@@ -21,3 +21,12 @@ def test_grid_simple_mixed():
         _ = GridSearch(domain)
     gs = GridSearch(domain, sample_continuous=True, seed=93)
     assert len(gs.run_step(batch_size=8)) == 8
+
+
+def test_update():
+    domain = opt.Domain({"x": {-5., 6.}})
+    gs = GridSearch(domain)
+    gs.update([domain.sample() for _ in range(10)], list(range(10)))
+    gs.update(domain.sample(), {"score": 23.0})
+    gs.update(domain.sample(), 2.0)
+    assert len(gs.history) == 12
