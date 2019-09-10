@@ -4,6 +4,7 @@ GB_US_SPELLING = {
     "minimise": "minimize",
     "maximise": "maximize",
     "optimise": "optimize",
+    "optimiser": "optimizer",
     "emphasise": "emphasize"
 }
 
