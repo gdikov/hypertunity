@@ -11,7 +11,7 @@ import tempfile
 import time
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Callable, Tuple, List, Any, Union
+from typing import Callable, Tuple, List, Any, Union, Dict
 
 __all__ = [
     "Job",
@@ -87,7 +87,8 @@ def run_command(cmd: List[str]) -> str:
     """
     ps = subprocess.run(args=cmd, capture_output=True)
     if ps.stderr:
-        raise OSError(f"Failed running '{cmd}' with error message: {ps.stderr}.")
+        raise OSError(f"Failed running {' '.join(cmd)} with error message: "
+                      f"{ps.stderr.decode('utf-8')}.")
     return ps.stdout.decode("utf-8")
 
 
@@ -116,13 +117,14 @@ def get_callable_from_script(script_path: str, func_name: str = "main") -> Calla
     return wrapper
 
 
-def run_script_with_args(binary: str, script_path: str, *args: Any):
+def run_script_with_args(binary: str, script_path: str, *args: Any, **kwargs: Any):
     """Run script using a binary and command line arguments.
 
     Args:
         binary: str, the binary to run the script with, e.g. 'python'.
         script_path: str, the path to the script.
         *args: Any, a collection of arguments which will be converted to string and passed on to the run command.
+        **kwargs: Any, keyword arguments which will be converted to named script arguments.
 
     Returns:
         The contents of the results, which the script is assumed to store, given an output file path as an argument.
@@ -137,10 +139,14 @@ def run_script_with_args(binary: str, script_path: str, *args: Any):
     if not os.path.isfile(script_path):
         raise FileNotFoundError(f"Cannot find script {script_path}.")
     with tempfile.TemporaryDirectory() as tmpdir:
-        args_as_str = list(map(str, args))
         output_file = os.path.join(tmpdir, "results.pkl")
-        args_as_str.append(output_file)
-        run_command([binary, script_path] + args_as_str)
+        args_as_str, kwargs_as_str = [], []
+        if args:
+            args_as_str.extend([*map(str, args), output_file])
+        if kwargs:
+            kwargs_as_str.extend([str(item) for k_v in kwargs.items() for item in k_v])
+            kwargs_as_str.extend(["--output_file", output_file])
+        run_command([binary, script_path, *args_as_str, *kwargs_as_str])
         return fetch_result(output_file)
 
 
@@ -154,9 +160,6 @@ def fetch_result(output_file, n_trials: int = 5, waiting_time: float = 1.0) -> A
 
     Returns:
         The unpickled output file if found, else None.
-
-    Notes:
-        This function will
     """
     if output_file is None:
         return None
@@ -168,11 +171,6 @@ def fetch_result(output_file, n_trials: int = 5, waiting_time: float = 1.0) -> A
         return None
     with open(output_file, 'rb') as fp:
         return pickle.load(fp)
-
-
-# job related constants
-_JOB_SCRIPT_FUNC_SEPARATOR = ":"
-_JOB_DEFAULT_BINARY = "source"
 
 
 @dataclass(frozen=True)
@@ -189,9 +187,14 @@ class Job:
         task: callable or str, a python function to run or a file path to a python script.
     """
     task: Union[Callable, str]
-    args: Tuple = ()
+    args: Union[Tuple, Dict] = ()
     id: int = field(default_factory=generate_id)
     meta: Any = None
+
+    # job related constants
+    _JOB_SCRIPT_FUNC_SEPARATOR = ":"
+    _JOB_DEFAULT_BINARY = "source"
+    _JOB_SCRIPT_FUNC_SEPARATION_REGEX = r"[^\w\/\.]+"
 
     def __post_init__(self):
         if not isinstance(self.task, (Callable, str)):
@@ -204,12 +207,17 @@ class Job:
         return hash(str(self.id))
 
     def __call__(self, *args, **kwargs) -> 'Result':
-        all_args = args + self.args
+        all_args = args
+        all_kwargs = kwargs
+        if isinstance(self.args, Tuple):
+            all_args += self.args
+        else:
+            all_kwargs = dict(**kwargs, **self.args)
         if isinstance(self.task, Callable):
             runnable = self.task
         else:
             runnable = self._build_callable()
-        return Result(id=self.id, data=runnable(*all_args, **kwargs))
+        return Result(id=self.id, data=runnable(*all_args, **all_kwargs))
 
     def _build_callable(self):
         """Create a function from a string task.
@@ -218,9 +226,9 @@ class Job:
         script.func_to_run callable.
         If the task is of the form /path/to/script.py, then return a python /path/to/script.py callable.
         """
-        if _JOB_SCRIPT_FUNC_SEPARATOR in self.task:
+        if self._JOB_SCRIPT_FUNC_SEPARATOR in self.task:
             # split the task string by the [:]+ marker
-            script_path, func_name = re.split(r"[^\w\/\.]+", self.task)
+            script_path, func_name = re.split(self._JOB_SCRIPT_FUNC_SEPARATION_REGEX, self.task)
             assert script_path and func_name, f"Empty path {script_path} or function name {func_name}"
             runnable = get_callable_from_script(script_path, func_name)
         else:
@@ -235,33 +243,32 @@ class Job:
             return "python"
         if self.task.endswith(".sh"):
             return "bash"
-        return _JOB_DEFAULT_BINARY
+        return self._JOB_DEFAULT_BINARY
 
 
-# slurm shell commands
-_SLURM_CMD_PUSH = ["sbatch"]
-_SLURM_CMD_KILL = ["scancel"]
-_SLURM_CMD_INFO = ["scontrol", "show", "job"]
-
-# slurm script elements
-_SLURM_SCRIPT_PREAMBLE = "#!/bin/bash"
-_SLURM_SCRIPT_LINE_PREFIX = "#SBATCH"
-_SLURM_SCRIPT_JOB_NAME = "--job-name"
-_SLURM_SCRIPT_OUT_NAME = "--output"
-_SLURM_SCRIPT_RESOURCES_MEM = "--mem"
-_SLURM_SCRIPT_RESOURCES_TIME = "--time"
-_SLURM_SCRIPT_RESOURCES_CPU = "--cpus-per-task"
-_SLURM_SCRIPT_RESOURCES_GPU = "--gres"
-
-
-class SlurmJobStatus(enum.Enum):
+class SlurmJobState(enum.Enum):
     """Some of the most frequently encountered slurm job statuses."""
+
     PENDING = 0
     RUNNING = 1
     COMPLETED = 2
     FAILED = 3
     CANCELLED = 4
     UNKNOWN = 5
+
+    @classmethod
+    def from_string(cls, state: str):
+        if state == "running":
+            return cls.RUNNING
+        if state == "pending":
+            return cls.PENDING
+        if state == "completed":
+            return cls.COMPLETED
+        if state == "failed":
+            return cls.FAILED
+        if state == "cancelled":
+            return cls.CANCELLED
+        return cls.UNKNOWN
 
 
 @dataclass(frozen=True)
@@ -272,7 +279,26 @@ class SlurmJob(Job):
     Attributes:
         output_file: str, optional path to the file where the executed script will dump the result file.
     """
+
     output_file: str = None
+
+    # slurm shell commands
+    _SLURM_CMD_PUSH = ["sbatch"]
+    _SLURM_CMD_KILL = ["scancel"]
+    _SLURM_CMD_INFO = ["scontrol", "show", "job"]
+
+    # slurm script elements
+    _SLURM_SCRIPT_PREAMBLE = "#!/bin/bash"
+    _SLURM_SCRIPT_LINE_PREFIX = "#SBATCH"
+    _SLURM_SCRIPT_JOB_NAME = "--job-name"
+    _SLURM_SCRIPT_OUT_NAME = "--output"
+    _SLURM_SCRIPT_RESOURCES_MEM = "--mem"
+    _SLURM_SCRIPT_RESOURCES_TIME = "--time"
+    _SLURM_SCRIPT_RESOURCES_CPU = "--cpus-per-task"
+    _SLURM_SCRIPT_RESOURCES_GPU = "--gres"
+
+    # other macros
+    _SLURM_JOB_STATE_REGEX = r"JobState=(RUNNING|PENDING|COMPLETED|FAILED|CANCELLED)"
 
     def __post_init__(self):
         if not isinstance(self.task, str):
@@ -288,15 +314,15 @@ class SlurmJob(Job):
             contents = self._create_slurm_script()
             fp.writelines(contents)
             fp.seek(0)
-            response = run_command(_SLURM_CMD_PUSH + [f"{fp.name}"])
+            response = run_command(self._SLURM_CMD_PUSH + [f"{fp.name}"])
         slurm_id = int(re.search(r"[\d]+", response).group())
         while True:
             slurm_status = self._query_job_status(slurm_id)
-            if slurm_status in [SlurmJobStatus.RUNNING, SlurmJobStatus.PENDING]:
+            if slurm_status in [SlurmJobState.RUNNING, SlurmJobState.PENDING]:
                 time.sleep(1)
-            elif slurm_status in [SlurmJobStatus.CANCELLED, SlurmJobStatus.FAILED]:
+            elif slurm_status in [SlurmJobState.CANCELLED, SlurmJobState.FAILED]:
                 return None
-            elif slurm_status == SlurmJobStatus.COMPLETED:
+            elif slurm_status == SlurmJobState.COMPLETED:
                 return fetch_result(self.output_file)
             else:
                 raise RuntimeError(f"Unknown state of slurm job {slurm_id}.")
@@ -308,46 +334,46 @@ class SlurmJob(Job):
         else:
             # Preamble, job name and output log filename definitions
             content_lines = [
-                f"{_SLURM_SCRIPT_PREAMBLE}\n",
-                f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_JOB_NAME}=job_{self.id}\n",
-                f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_OUT_NAME}=log_%j.txt\n"]
+                f"{self._SLURM_SCRIPT_PREAMBLE}\n",
+                f"{self._SLURM_SCRIPT_LINE_PREFIX} {self._SLURM_SCRIPT_JOB_NAME}=job_{self.id}\n",
+                f"{self._SLURM_SCRIPT_LINE_PREFIX} {self._SLURM_SCRIPT_OUT_NAME}=log_%j.txt\n"]
             # Resources specification
             n_cpus = int(self.meta.get("resources", {}).get("cpu", 1))
             if n_cpus >= 1:
-                content_lines.append(f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_RESOURCES_CPU}={n_cpus}\n")
+                content_lines.append(f"{self._SLURM_SCRIPT_LINE_PREFIX} "
+                                     f"{self._SLURM_SCRIPT_RESOURCES_CPU}={n_cpus}\n")
             gpus = str(self.meta.get("resources", {}).get("gpu", ""))
             if gpus:
                 if gpus.isnumeric():
                     gpus = f"gpu:{gpus}"
-                content_lines.append(f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_RESOURCES_GPU}={gpus}\n")
+                content_lines.append(f"{self._SLURM_SCRIPT_LINE_PREFIX} "
+                                     f"{self._SLURM_SCRIPT_RESOURCES_GPU}={gpus}\n")
             mem = str(self.meta.get("resources", {}).get("memory", ""))
             if mem:
-                content_lines.append(f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_RESOURCES_MEM}={mem}\n")
+                content_lines.append(f"{self._SLURM_SCRIPT_LINE_PREFIX} "
+                                     f"{self._SLURM_SCRIPT_RESOURCES_MEM}={mem}\n")
             limit_time = str(self.meta.get("resources", {}).get("time", ""))
             if limit_time:
-                content_lines.append(f"{_SLURM_SCRIPT_LINE_PREFIX} {_SLURM_SCRIPT_RESOURCES_TIME}={limit_time}\n")
+                content_lines.append(f"{self._SLURM_SCRIPT_LINE_PREFIX} "
+                                     f"{self._SLURM_SCRIPT_RESOURCES_TIME}={limit_time}\n")
             # Task specification
             binary = self.meta.get("binary", "python")
-            content_lines.append(f"{binary} {self.task} {' '.join(map(str, self.args))} {self.output_file}")
+            if isinstance(self.args, Tuple):
+                # build positional arguments
+                script_args = ' '.join([*map(str, self.args), self.output_file])
+            else:
+                # build named arguments
+                script_args = ' '.join([*(str(item) for key_val in self.args.items() for item in key_val),
+                                        "--output_file", self.output_file])
+            content_lines.append(f"{binary} {self.task} {script_args}")
         return content_lines
 
-    @staticmethod
-    def _query_job_status(slurm_id: int) -> SlurmJobStatus:
-        response = run_command(_SLURM_CMD_INFO + [str(slurm_id)])
-        job_state = re.search(r"JobState=(RUNNING|PENDING|COMPLETED|FAILED|CANCELLED)", response)
+    def _query_job_status(self, slurm_id: int) -> SlurmJobState:
+        response = run_command(self._SLURM_CMD_INFO + [str(slurm_id)])
+        job_state = re.search(self._SLURM_JOB_STATE_REGEX, response)
         if job_state is not None:
             job_state = job_state.group(1).lower()
-            if job_state == "running":
-                return SlurmJobStatus.RUNNING
-            if job_state == "pending":
-                return SlurmJobStatus.PENDING
-            if job_state == "completed":
-                return SlurmJobStatus.COMPLETED
-            if job_state == "failed":
-                return SlurmJobStatus.FAILED
-            if job_state == "cancelled":
-                return SlurmJobStatus.CANCELLED
-            return SlurmJobStatus.UNKNOWN
+            return SlurmJobState.from_string(job_state)
 
 
 @dataclass(frozen=True)

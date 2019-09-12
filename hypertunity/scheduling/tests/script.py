@@ -4,12 +4,22 @@ import pickle
 import sys
 
 
+class DoNotReplaceAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) is None:
+            setattr(namespace, self.dest, values)
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("x", type=int)
-    parser.add_argument("y", type=float)
-    parser.add_argument("z", type=str)
-    parser.add_argument("output_file", type=str)
+    parser.add_argument("x", nargs='?', type=int, action=DoNotReplaceAction)
+    parser.add_argument("--x", type=int)
+    parser.add_argument("y", nargs='?', type=float, action=DoNotReplaceAction)
+    parser.add_argument("--y", type=float)
+    parser.add_argument("z", nargs='?', type=str, action=DoNotReplaceAction)
+    parser.add_argument("--z", type=str)
+    parser.add_argument("output_file", nargs='?', type=str, action=DoNotReplaceAction)
+    parser.add_argument("--output_file", type=str)
     return parser.parse_args(args)
 
 

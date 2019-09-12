@@ -1,16 +1,17 @@
-import numpy as np
+import pytest
 
 from hypertunity import Trial
-from hypertunity.optimisation import Domain, RandomSearch, BayesianOptimisation
+from hypertunity.optimisation import Domain, RandomSearch
 from hypertunity.reports import TableReporter
 from hypertunity.scheduling import Job
 from hypertunity.scheduling.tests.test_scheduler import run_jobs
 
 
 def foo(x, y, z):
-    return x**2 + y**2 - z**3
+    return x ** 2 + y ** 2 - z ** 3
 
 
+@pytest.mark.timeout(60.0)
 def test_trial_with_callable():
     domain = Domain({"x": [-1., 1.], "y": [-2, 2], "z": {1, 2, 3, 4}})
     trial = Trial(objective=foo, domain=domain,
@@ -24,7 +25,7 @@ def test_trial_with_callable():
     rep = TableReporter(domain, metrics=["score"])
     for i in range(n_steps):
         samples = rs.run_step(batch_size=batch_size, minimise=False)
-        results = [foo(*s.as_namedtuple(),) for s in samples]
+        results = [foo(*s.as_namedtuple(), ) for s in samples]
         for sample_eval in zip(samples, results):
             rep.log(sample_eval)
 
@@ -32,6 +33,7 @@ def test_trial_with_callable():
     assert str(rep.format(order="ascending")) == str(trial.reporter.format(order="ascending"))
 
 
+@pytest.mark.timeout(60.0)
 def test_trial_with_script():
     domain = Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}})
     trial = Trial(objective="hypertunity/scheduling/tests/script.py",

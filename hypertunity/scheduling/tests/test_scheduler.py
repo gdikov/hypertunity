@@ -42,6 +42,16 @@ def test_local_from_script_and_cmdline_args():
 
 
 @pytest.mark.timeout(10.0)
+def test_local_from_script_and_cmdline_named_args():
+    domain = ht.Domain({"--x": {0, 1, 2, 3}, "--y": [-1., 1.], "--z": {"acb123", "abc"}}, seed=7)
+    jobs = [Job(task="hypertunity/scheduling/tests/script.py",
+                args=domain.sample().as_dict(),
+                meta={"binary": "python"}) for _ in range(10)]
+    results = run_jobs(jobs)
+    assert all([r.data == script.main(**{k.lstrip("-"): v for k, v in j.args.items()}) for r, j in zip(results, jobs)])
+
+
+@pytest.mark.timeout(10.0)
 def test_local_from_fn():
     domain = ht.Domain({"x": [0., 1.]}, seed=7)
     jobs = [Job(task=square, args=(domain.sample(),)) for _ in range(10)]
