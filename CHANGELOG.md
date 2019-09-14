@@ -6,7 +6,11 @@ All notable changes to this project will be documented in this file.
 - `Trial` a wrapper class for high-level usage, which runs the optimiser, evaluates the objective
  by scheduling jobs, updates the optimiser and summarises the results.
 - a `Job` from a script with command line arguments can now be run with 
- named arguments passed as a dictionary instead of a tuple.  
+ named arguments passed as a dictionary instead of a tuple.
+- checkpointing of results on disk when calling `log()` or a `Reporter` object.
+
+## Changed
+- every `Reporter` instance has a `primary_metric` attribute, which is an argument to `__init__`.
 
 ## [0.3.1] - 2019-09-10
 ## Fixed

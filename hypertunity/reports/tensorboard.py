@@ -37,15 +37,21 @@ class TensorboardReporter(Reporter):
     The user is responsible for launching TensorBoard.
     """
 
-    def __init__(self, domain: Domain, metrics: List[str], logdir: str):
+    def __init__(self, domain: Domain, metrics: List[str], logdir: str,
+                 primary_metric: str = "",
+                 database_path: str = None):
         """Initialise the TensorBoard reporter.
 
         Args:
             domain: `Domain`, the domain to which all evaluated samples belong.
             metrics: list of str, the names of the metrics.
             logdir: str, path to a folder for storing the Tensorboard events.
+            primary_metric: str, optional primary metric from `metrics`.
+                This is used by the `format` method to determine the sorting column and the best value.
+                Default is the first one.
+            database_path: str, the path to the database for storing experiment history on disk.
         """
-        super(TensorboardReporter, self).__init__(domain, metrics)
+        super(TensorboardReporter, self).__init__(domain, metrics, primary_metric, database_path)
         self._hparams_domain = self._convert_to_hparams_domain(self.domain)
         if not os.path.exists(logdir):
             os.makedirs(logdir)

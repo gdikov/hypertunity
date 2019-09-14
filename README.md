@@ -16,28 +16,30 @@ For the full set of features refer to the [documentation](tbd).
 
 ## Quick start
 
-A central object in _Hypertunity_ is the `Domain` defining the space of valid values for an objective function.
-A `Sample` is a one realisation from the `Domain`, which supplied to the objective function results in an
-`EvaluationScore`——a numeric value representing the goodness of the sample.
+A central object is the `Domain` defining the space of valid values for an objective function.
+A `Sample` is a one realisation from the `Domain`, which supplied to the objective function results in a score.
 
-Define a wrapper around an expensive objective function that takes a `Sample` and returns an `EvaluationScore`:
+Define a wrapper around an expensive objective function:
 ```python
 import hypertunity as ht
 
-def foo(x: ht.Sample) -> ht.EvaluationScore:
+def foo(x: ht.Sample) -> float:
     # do some very costly computations
     ...
-    return ht.EvaluationScore(score, variance)
+    return score
 ```
-Define the valid ranges of values for `foo` and the optimiser:
+Define the valid ranges of values for `foo`:
 
 ```python
 # define the optimisation domain
 domain = ht.Domain({"x": [-5., 6.],           # continuous variable within the interval [-5., 6.]
                     "y": {"opt1", "opt2"},    # categorical variable from the set {"opt1", "opt2"}
-                    "z": set(range(4))})    # discrete variable from the set {0, 1, 2, 3}
+                    "z": set(range(4))})      # discrete variable from the set {0, 1, 2, 3}
+```
 
-# initialise a BO optimiser
+Set up the optimiser:
+
+```python
 bo = ht.BayesianOptimisation(domain=domain)
 ```
 
@@ -61,6 +63,17 @@ import hypertunity.reports.tensorboard as tb
 
 results = tb.TensorboardReporter(domain=domain, metrics=["score"], logdir="path/to/logdir")
 results.from_history(bo.history)
+```
+
+## Even quicker start
+
+A high-level wrapper class `Trial` allows for seamless parallel optimisation
+without bothering with scheduling jobs, updating optimisers and logging:
+   
+```python
+trial = ht.Trial(objective=foo, domain=domain, optimiser="bo", 
+                 reporter="tensorboard", metrics=["score"])
+trial.run(n_steps, batch_size=2, n_parallel=2)
 ```
 
 ## Installation

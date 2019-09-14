@@ -73,7 +73,8 @@ class Trial:
         else:
             raise TypeError("A reporter must be either a string, "
                             "a Reporter type or a Reporter instance.")
-        rep_kwargs = {"metrics": kwargs.get("metrics", ["score"])}
+        rep_kwargs = {"metrics": kwargs.get("metrics", ["score"]),
+                      "database_path": kwargs.get("database_path", ".")}
         if not issubclass(reporter_class, reports.TableReporter):
             rep_kwargs["logdir"] = kwargs.get("logdir", "tensorboard/")
         return reporter_class(self.domain, **rep_kwargs)
@@ -109,8 +110,8 @@ class Trial:
                 scheduler.dispatch(jobs)
                 evaluations = [r.data for r in scheduler.collect(n_results=batch_size, timeout=self._timeout)]
                 self.optimiser.update(samples, evaluations)
-                for sample_eval in zip(samples, evaluations):
-                    self.reporter.log(sample_eval)
+                for s, e, j in zip(samples, evaluations, jobs):
+                    self.reporter.log((s, e), meta={"job_id": j.id})
 
 
 def get_optimiser(name: str) -> Type[Optimiser]:

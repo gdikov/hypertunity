@@ -7,7 +7,8 @@ required_packages = [
     "gpyopt==1.2.5",
     "joblib>=0.13.2",
     "matplotlib>=3.0",
-    "numpy>=1.16"
+    "numpy>=1.16",
+    "tinydb>=3.13.0"
 ]
 
 extras = {
@@ -29,7 +30,7 @@ classifiers = [
 
 setup(
     name="hypertunity",
-    version="0.4dev1",
+    version="0.4dev2",
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",
