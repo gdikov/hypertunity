@@ -11,6 +11,7 @@ from typing import Tuple
 __all__ = [
     "Domain",
     "DomainNotIterableError",
+    "DomainSpecificationError",
     "Sample"
 ]
 
@@ -34,6 +35,10 @@ class _RecursiveDict:
 
     def __hash__(self):
         return hash(str(self))
+
+    def __repr__(self):
+        """Return the representation of the recursive dict using the string method."""
+        return str(self)
 
     def __str__(self):
         """Return the string representation of the recursive dict."""
@@ -228,12 +233,8 @@ class Domain(_RecursiveDict):
             seed: optional, int to seed the randomised sampling.
         """
         super(Domain, self).__init__(dct)
+        self._validate()
         self._rng = random.Random(seed)
-
-        if not self._validate():
-            raise ValueError("Bad domain specification. Keys must be of type string and values must be "
-                             "either of a set, list or dict type.")
-
         self._is_continuous = False
         for _, val in _deepiter_dict(self._data):
             if isinstance(val, list):
@@ -272,8 +273,10 @@ class Domain(_RecursiveDict):
         """Check for invalid domain specifications."""
         for keys, values in _deepiter_dict(self._data):
             if not (all(map(lambda x: isinstance(x, str), keys)) and isinstance(values, (set, list, dict))):
-                return False
-        return True
+                raise DomainSpecificationError("Keys must be of type string and values "
+                                               "must be either of type set, list or dict.")
+            if isinstance(values, list) and (len(values) != 2 or values[0] >= values[1]):
+                raise DomainSpecificationError("Interval must be specified by two numbers: [a, b], a < b.")
 
     def sample(self):
         """Draw a sample from the domain. All subdomains are sampled uniformly.
@@ -336,7 +339,11 @@ class Domain(_RecursiveDict):
         return Domain.from_list(discrete), Domain.from_list(categorical), Domain.from_list(continuous)
 
 
-class DomainNotIterableError(Exception):
+class DomainNotIterableError(TypeError):
+    pass
+
+
+class DomainSpecificationError(ValueError):
     pass
 
 

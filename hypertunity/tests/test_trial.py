@@ -16,6 +16,7 @@ def test_trial_with_callable():
     domain = Domain({"x": [-1., 1.], "y": [-2, 2], "z": {1, 2, 3, 4}})
     trial = Trial(objective=foo, domain=domain,
                   optimiser="random_search",
+                  database_path=None,
                   seed=7, metrics=["score"])
     n_steps = 10
     batch_size = 2
@@ -39,6 +40,7 @@ def test_trial_with_script():
     trial = Trial(objective="hypertunity/scheduling/tests/script.py",
                   domain=domain,
                   optimiser="random_search",
+                  database_path=None,
                   seed=7, metrics=["score"])
     batch_size = 4
     trial.run(n_steps=1, batch_size=batch_size, n_parallel=batch_size)

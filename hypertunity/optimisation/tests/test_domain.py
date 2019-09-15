@@ -33,10 +33,10 @@ def test_flatten():
 
 
 def test_addition():
-    domain_all = ht.Domain({"a": [1, 2], "b": {"c": {1, 2, 3}, "d": {"o1", "o2"}}, "e": [3, 4, 5]})
+    domain_all = ht.Domain({"a": [1, 2], "b": {"c": {1, 2, 3}, "d": {"o1", "o2"}}, "e": {3, 4, 5}})
     domain_1 = ht.Domain({"a": [1, 2], "b": {"c": {1, 2, 3}}})
     domain_2 = ht.Domain({"b": {"d": {"o1", "o2"}}})
-    domain_3 = ht.Domain({"e": [3, 4, 5]})
+    domain_3 = ht.Domain({"e": {3, 4, 5}})
     assert domain_1 + domain_2 + domain_3 == domain_all
     with pytest.raises(ValueError):
         _ = domain_1 + domain_1

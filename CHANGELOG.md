@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## Changed
 - every `Reporter` instance has a `primary_metric` attribute, which is an argument to `__init__`.
 
+## Fixed
+- validation of `Domain` is not allowing for intervals with more than 2 numbers.
+- minor bugs in tests.
+
 ## [0.3.1] - 2019-09-10
 ## Fixed
 - `Optimiser.update()` now accepts evaluation arguments that are float, `EvaluationScore` or a dict
