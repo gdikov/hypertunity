@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - a `Job` from a script with command line arguments can now be run with 
  named arguments passed as a dictionary instead of a tuple.
 - checkpointing of results on disk when calling `log()` or a `Reporter` object.
+- optimisation history can now be loaded into an `Optimiser`. Example use-case would be to warm-start
+`BayesianOptimisation` from the history of the quicker `RandomSearch`.
 
 ## Changed
 - every `Reporter` instance has a `primary_metric` attribute, which is an argument to `__init__`.

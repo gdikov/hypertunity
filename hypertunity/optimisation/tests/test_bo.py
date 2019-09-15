@@ -20,6 +20,17 @@ def test_bo_update_and_reset():
     assert len(bo.history) == 0
 
 
+def test_bo_set_history():
+    n_samples = 10
+    domain = ht.Domain({"a": {"b": [2, 3]}, "c": [0, 0.1]})
+    history = [ht.HistoryPoint(domain.sample(), {"score": ht.EvaluationScore(float(i))})
+               for i in range(n_samples)]
+    bo = ht.BayesianOptimisation(domain, seed=7)
+    bo.history = history
+    assert bo.history == history
+    assert len(bo._data_x) == len(bo._data_fx) == len(history)
+
+
 @pytest.mark.slow
 def test_bo_simple_continuous():
     domain = ht.Domain({"x": [-1., 6.]})

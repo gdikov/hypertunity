@@ -59,6 +59,17 @@ class Optimiser:
         """Return the accumulated optimisation history."""
         return self._history
 
+    @history.setter
+    def history(self, history: List[HistoryPoint]):
+        """Set the optimiser history.
+
+        Args:
+            history: list of `HistoryPoint`, the new history which will **overwrite** the old one.
+        """
+        self.reset()
+        for hp in history:
+            self.update(hp.sample, hp.metrics)
+
     @abc.abstractmethod
     def run_step(self, batch_size: int = 1, *args: Any, **kwargs: Any) -> List[Sample]:
         """Perform one step of optimisation and suggest the next sample to evaluate.
