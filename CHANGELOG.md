@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.4.0] - 2019-09-15
 ## Added
 - `Trial` a wrapper class for high-level usage, which runs the optimiser, evaluates the objective
  by scheduling jobs, updates the optimiser and summarises the results.
