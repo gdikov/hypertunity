@@ -4,8 +4,9 @@ import beautifultable as bt
 import numpy as np
 
 from hypertunity import utils
+from hypertunity.domain import Domain
 from hypertunity.optimisation.base import HistoryPoint
-from hypertunity.optimisation.domain import Domain
+
 from .base import Reporter
 
 

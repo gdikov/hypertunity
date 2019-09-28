@@ -8,8 +8,8 @@ import GPyOpt
 import numpy as np
 
 from hypertunity import utils
+from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import Optimiser, EvaluationScore
-from hypertunity.optimisation.domain import Domain, Sample
 
 __all__ = [
     "BayesianOptimisation",

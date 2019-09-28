@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## Changed
+- `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
 
 ## [0.4.0] - 2019-09-15
 ## Added

@@ -1,5 +1,5 @@
+from hypertunity.domain import Domain
 from hypertunity.optimisation.base import EvaluationScore, HistoryPoint
-from hypertunity.optimisation.domain import Domain
 
 
 def generate_history(n_samples):

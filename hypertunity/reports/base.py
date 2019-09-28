@@ -5,8 +5,8 @@ from typing import List, Any, Union, Tuple, Dict, Callable, Optional
 
 import tinydb
 
+from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import HistoryPoint, EvaluationScore
-from hypertunity.optimisation.domain import Domain, Sample
 
 __all__ = [
     "Reporter"

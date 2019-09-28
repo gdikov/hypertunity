@@ -5,7 +5,7 @@ import math
 from dataclasses import dataclass
 from typing import List, Dict, Any, Sequence
 
-from hypertunity.optimisation.domain import Domain, Sample
+from hypertunity.domain import Domain, Sample
 
 __all__ = [
     "EvaluationScore",

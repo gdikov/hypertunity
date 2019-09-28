@@ -5,7 +5,8 @@ from typing import Type, Union, Callable
 from hypertunity import optimisation
 from hypertunity import reports
 from hypertunity import utils
-from hypertunity.optimisation import Optimiser, Domain
+from hypertunity.domain import Domain
+from hypertunity.optimisation import Optimiser
 from hypertunity.reports import Reporter
 from hypertunity.scheduling import Scheduler, Job, SlurmJob
 

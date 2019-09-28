@@ -2,8 +2,8 @@
 
 from typing import List
 
+from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import Optimiser
-from hypertunity.optimisation.domain import Domain, Sample
 
 
 class RandomSearch(Optimiser):

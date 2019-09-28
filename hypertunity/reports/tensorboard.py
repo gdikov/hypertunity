@@ -9,7 +9,7 @@ except ImportError as err:
     raise ImportError("Install TensorFlow>=1.14 and tensorboard>=1.14 "
                       "to support the HParams plugin.") from err
 
-from hypertunity.optimisation.domain import Domain, Sample
+from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import HistoryPoint
 from hypertunity import utils
 
