@@ -1,7 +1,7 @@
 import pytest
 
-from hypertunity import Trial
-from hypertunity.optimisation import Domain, RandomSearch
+from hypertunity import Domain, Trial
+from hypertunity.optimisation import RandomSearch
 from hypertunity.reports import TableReporter
 from hypertunity.scheduling import Job
 from hypertunity.scheduling.tests.test_scheduler import run_jobs
