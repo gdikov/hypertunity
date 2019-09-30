@@ -1,4 +1,12 @@
+import re
+
 from setuptools import setup, find_packages
+
+with open("hypertunity/__init__.py", "r", encoding="utf8") as f:
+    version = re.search(r"__version__ = [\'\"](.*?)[\'\"]", f.read()).group(1)
+
+with open("README.md", "r", encoding="utf8") as f:
+    readme = f.read()
 
 required_packages = [
     "beautifultable>=0.7.0",
@@ -12,7 +20,7 @@ required_packages = [
 ]
 
 extras = {
-    "tensorboard": ["tensorflow>=1.14.0", "tensorboard>=1.14.0"],
+    "tensorboard": ["tensorflow>=1.14.0", "tensorboard==1.14.0"],
     "tests": ["pytest>=4.6.3", "pytest-timeout>=1.3.3"]
 }
 
@@ -30,12 +38,12 @@ classifiers = [
 
 setup(
     name="hypertunity",
-    version="1.0dev",
+    version=version,
     author="Georgi Dikov",
     author_email="gvdikov@gmail.com",
     url="https://github.com/gdikov/hypertunity",
     description="A toolset for distributed black-box hyperparameter optimisation.",
-    long_description=open("README.md").read(),
+    long_description=readme,
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     python_requires=">=3.6",
     install_requires=required_packages,

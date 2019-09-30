@@ -5,6 +5,10 @@ from typing import List
 from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import Optimiser
 
+__all__ = [
+    "RandomSearch"
+]
+
 
 class RandomSearch(Optimiser):
     def __init__(self, domain: Domain, seed: int = None):

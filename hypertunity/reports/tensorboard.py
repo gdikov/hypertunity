@@ -16,7 +16,7 @@ from hypertunity import utils
 from .base import Reporter
 
 __all__ = [
-    "TensorboardReporter"
+    "Tensorboard"
 ]
 
 EAGER_MODE = tf.executing_eagerly()
@@ -29,12 +29,15 @@ else:
     summary_scalar = tf.summary.scalar
 
 
-class TensorboardReporter(Reporter):
-    """Utilise Tensorboard's HParams plugin as a visualisation tool for the summary of the optimisation.
-    Prepare and create entries with the scalar data of the experiment trials, containing the domain sample
-    and the corresponding metrics.
+class Tensorboard(Reporter):
+    """A `Reporter` subclass to visualise the results in Tensorboard.
 
-    The user is responsible for launching TensorBoard.
+    It utilises Tensorboard's HParams plugin as a dashboard for the summary of the optimisation.
+    This class prepares and creates entries with the scalar data of the experiment trials,
+    containing the domain sample and the corresponding metrics.
+
+    Notes:
+        The user is responsible for launching TensorBoard in the browser.
     """
 
     def __init__(self, domain: Domain, metrics: List[str], logdir: str,
@@ -51,7 +54,7 @@ class TensorboardReporter(Reporter):
                 Default is the first one.
             database_path: str, the path to the database for storing experiment history on disk.
         """
-        super(TensorboardReporter, self).__init__(domain, metrics, primary_metric, database_path)
+        super(Tensorboard, self).__init__(domain, metrics, primary_metric, database_path)
         self._hparams_domain = self._convert_to_hparams_domain(self.domain)
         if not os.path.exists(logdir):
             os.makedirs(logdir)
@@ -116,7 +119,7 @@ class TensorboardReporter(Reporter):
             entry: `HistoryPoint`, the sample and evaluation metrics to log.
             experiment_dir: str, the directory name where to store all experiment related data.
                 It will be prefixed by the `logdir` path which is provided on initialisation
-                of the `TensorboardReporter`.
+                of the `Tensorboard`.
         """
         converted = self._convert_to_hparams_sample(entry.sample)
         if not experiment_dir:

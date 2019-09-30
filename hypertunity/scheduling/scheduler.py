@@ -93,7 +93,7 @@ class Scheduler:
         for job in jobs:
             self._job_queue.put_nowait(job)
 
-    def collect(self, n_results: int = 0, timeout: float = None) -> List[Result]:
+    def collect(self, n_results: int, timeout: float = None) -> List[Result]:
         """Collect all the available results or wait until they become available.
 
         Args:

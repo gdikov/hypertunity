@@ -1,5 +1,7 @@
 import queue
 
+from functools import wraps
+
 GB_US_SPELLING = {
     "minimise": "minimize",
     "maximise": "maximize",
@@ -21,6 +23,9 @@ def support_american_spelling(func):
         The decorated function which supports American keyword arguments.
     """
 
+    # using functools.wraps(func) enables automated documentation generation
+    # for more information see: https://github.com/sphinx-doc/sphinx/issues/3783
+    @wraps(func)
     def british_spelling_func(*args, **kwargs):
         gb_kwargs = {US_GB_SPELLING.get(kw, kw): val for kw, val in kwargs.items()}
         return func(*args, **gb_kwargs)

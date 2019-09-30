@@ -21,7 +21,8 @@ HistoryEntryType = Union[
 class Reporter:
     """Abstract `Reporter` class for result visualisation."""
 
-    def __init__(self, domain: Domain, metrics: List[str],
+    def __init__(self, domain: Domain,
+                 metrics: List[str],
                  primary_metric: str = "",
                  database_path: str = None):
         """Initialise the base reporter.
@@ -116,11 +117,11 @@ class Reporter:
             document["meta"] = meta
         self._db_current_table.insert(document)
 
-    def get_best(self, criteria: Union[str, Callable] = "max") -> Optional[Dict[str, Any]]:
+    def get_best(self, criterion: Union[str, Callable] = "max") -> Optional[Dict[str, Any]]:
         """Return the entry from the database which corresponds to the best scoring experiment.
 
         Args:
-            criteria: str or Callable, the function used to determine whether the highest or lowest score is
+            criterion: str or Callable, the function used to determine whether the highest or lowest score is
                 requested. If the evaluation metrics are more than one, then a custom `criteria` must be supplied.
 
         Returns:
@@ -128,17 +129,17 @@ class Reporter:
         """
         if not self._db_current_table:
             return None
-        if isinstance(criteria, str):
+        if isinstance(criterion, str):
             predefined = {"max": max, "min": min}
-            if criteria not in predefined:
-                raise ValueError(f"Unknown criteria for finding best experiment. "
+            if criterion not in predefined:
+                raise ValueError(f"Unknown criterion for finding best experiment. "
                                  f"Select one from {list(predefined.keys())} "
                                  f"or supply a custom function.")
-            selection_fn = predefined[criteria]
-        elif isinstance(criteria, Callable):
-            selection_fn = criteria
+            selection_fn = predefined[criterion]
+        elif isinstance(criterion, Callable):
+            selection_fn = criterion
         else:
-            raise TypeError("The criteria must be of type str or Callable.")
+            raise TypeError("The criterion must be of type str or Callable.")
         return self._get_best_from_db(selection_fn)
 
     def _get_best_from_db(self, selection_fn: Callable):
@@ -153,7 +154,7 @@ class Reporter:
         return best_entry
 
     def from_history(self, history: List[HistoryEntryType]):
-        """Load the reporter with data from a entry of evaluations.
+        """Load the reporter with data from an entry of evaluations.
 
         Args:
             history: list of `HistoryPoint` or tuples, the sequence of evaluations comprised of samples and metrics.

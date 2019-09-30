@@ -19,7 +19,8 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install -e ./[tensorboard,tests]
+            pip install --upgrade pip
+            pip install ./[tensorboard,tests]
       - save_cache:
           paths:
             - ./venv

@@ -1,2 +1,2 @@
 from .base import Reporter
-from .table import TableReporter
+from .table import Table

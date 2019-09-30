@@ -9,11 +9,16 @@ from hypertunity.optimisation.base import HistoryPoint
 
 from .base import Reporter
 
+__all__ = [
+    "Table"
+]
 
-class TableReporter(Reporter):
-    """A `Reporter` to print and store a formatted table of the results."""
 
-    def __init__(self, domain: Domain, metrics: List[str],
+class Table(Reporter):
+    """A `Reporter` subclass to print and store a formatted table of the results."""
+
+    def __init__(self, domain: Domain,
+                 metrics: List[str],
                  primary_metric: str = "",
                  database_path: str = None):
         """Initialise the table reporter.
@@ -26,7 +31,7 @@ class TableReporter(Reporter):
                 Default is the first one.
             database_path: str, the path to the database for storing experiment history on disk.
         """
-        super(TableReporter, self).__init__(domain, metrics, primary_metric, database_path)
+        super(Table, self).__init__(domain, metrics, primary_metric, database_path)
         self._table = bt.BeautifulTable()
         self._table.set_style(bt.STYLE_SEPARATED)
         dim_names = [".".join(dns) for dns in self.domain.flatten()]

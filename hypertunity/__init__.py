@@ -1,5 +1,7 @@
+from .domain import *
 from .optimisation import *
 from .reports import *
 from .scheduling import *
 from .trial import *
-from .domain import *
+
+__version__ = "1.0dev"

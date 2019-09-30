@@ -76,7 +76,7 @@ class Trial:
                             "a Reporter type or a Reporter instance.")
         rep_kwargs = {"metrics": kwargs.get("metrics", ["score"]),
                       "database_path": kwargs.get("database_path", ".")}
-        if not issubclass(reporter_class, reports.TableReporter):
+        if not issubclass(reporter_class, reports.Table):
             rep_kwargs["logdir"] = kwargs.get("logdir", "tensorboard/")
         return reporter_class(self.domain, **rep_kwargs)
 
@@ -130,8 +130,8 @@ def get_optimiser(name: str) -> Type[Optimiser]:
 def get_reporter(name: str) -> Type[Reporter]:
     name = name.lower()
     if name.startswith("table"):
-        return reports.TableReporter
+        return reports.Table
     if name.startswith(("tensor", "tb")):
         import reports.tensorboard as tb
-        return tb.TensorboardReporter
+        return tb.Tensorboard
     raise ValueError(f"Unknown reporter {name}. Select one from {{'table', 'tensorboard'}}.")

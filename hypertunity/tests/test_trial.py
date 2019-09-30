@@ -2,7 +2,7 @@ import pytest
 
 from hypertunity import Domain, Trial
 from hypertunity.optimisation import RandomSearch
-from hypertunity.reports import TableReporter
+from hypertunity.reports import Table
 from hypertunity.scheduling import Job
 from hypertunity.scheduling.tests.test_scheduler import run_jobs
 
@@ -23,7 +23,7 @@ def test_trial_with_callable():
     trial.run(n_steps, batch_size=batch_size, n_parallel=batch_size)
 
     rs = RandomSearch(domain=domain, seed=7)
-    rep = TableReporter(domain, metrics=["score"])
+    rep = Table(domain, metrics=["score"])
     for i in range(n_steps):
         samples = rs.run_step(batch_size=batch_size, minimise=False)
         results = [foo(*s.as_namedtuple(), ) for s in samples]
