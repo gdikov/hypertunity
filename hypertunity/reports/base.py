@@ -36,8 +36,14 @@ class Reporter:
             database_path: str, the path to the database for storing experiment history on disk.
         """
         self.domain = domain
-        self.metrics = metrics
-        self.primary_metric = primary_metric or self.metrics[0]
+        if not metrics:
+            self.metrics = ["score"]
+        else:
+            self.metrics = metrics
+        if not primary_metric:
+            self.primary_metric = self.metrics[0]
+        else:
+            self.primary_metric = primary_metric
 
         table_name = f"trial_{datetime.datetime.now().isoformat()}"
         if database_path is not None:
@@ -83,7 +89,7 @@ class Reporter:
         sample, metrics_obj = entry
         if isinstance(metrics_obj, (float, EvaluationScore)):
             # use default name for score column
-            metrics_obj = {"score": metrics_obj}
+            metrics_obj = {self.primary_metric: metrics_obj}
         metrics = {}
         # create a properly formatted metrics dict of type Dict[str, EvaluationScore]
         for name, val in metrics_obj.items():

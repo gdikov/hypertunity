@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - bug in `BayesianOptimisation` sample conversion for nested dictionaries.
 - bug in `BayesianOptimisation` type preserving between the domain and the sample value.
 - bug in `Tensorboard` reporter for real intervals with integer boundaries. 
+- bug in `Reporter` for not using the default metric name during logging. 
 
 ## Changed
 - minor fixes in documentation typos and argument names.
