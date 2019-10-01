@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - minor fixes in documentation typos and argument names.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
 - rename `TableReporter` to `Table` and `TensorboardReporter` to `Tensorboard`.
+- backed for the `Scheduler` is reverted to 'loky' as leaking semaphore errors have disappeared.
 
 ## [0.4.0] - 2019-09-15
 ## Added

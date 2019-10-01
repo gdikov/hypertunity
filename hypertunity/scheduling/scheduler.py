@@ -64,7 +64,7 @@ class Scheduler:
             written to the result queue.
         """
         # TODO: Switch backend back to default "loky", after the leakage of semaphores is fixed
-        with joblib.Parallel(n_jobs=self.n_parallel, backend="multiprocessing") as parallel:
+        with joblib.Parallel(n_jobs=self.n_parallel, backend="loky") as parallel:
             while not self._interrupt_event.is_set():
                 current_jobs = utils.drain_queue(self._job_queue)
                 if not current_jobs:
