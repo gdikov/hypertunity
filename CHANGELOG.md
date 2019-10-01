@@ -2,16 +2,20 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-## Fixed
-- bug in `BayesianOptimisation` sample conversion for nested dictionaries.
-- bug in `BayesianOptimisation` type preserving between the domain and the sample value.
-- bug in `Tensorboard` reporter for real intervals with integer boundaries. 
-- bug in `Reporter` for not using the default metric name during logging. 
+## Added
+- `BayesianOptimisation` raises `ExhaustedSearchSpaceError` if a discrete domain is exhausted.
 
 ## Changed
 - minor fixes in documentation typos and argument names.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
 - rename `TableReporter` to `Table` and `TensorboardReporter` to `Tensorboard`.
+- `ExhaustedSearchSpaceError` is moved from `optimisation.exhastive` to `optimisation.base` module.
+
+## Fixed
+- bug in `BayesianOptimisation` sample conversion for nested dictionaries.
+- bug in `BayesianOptimisation` type preserving between the domain and the sample value.
+- bug in `Tensorboard` reporter for real intervals with integer boundaries. 
+- bug in `Reporter` for not using the default metric name during logging.
 
 ## [0.4.0] - 2019-09-15
 ## Added

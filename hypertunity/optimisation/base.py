@@ -11,7 +11,8 @@ __all__ = [
     "EvaluationScore",
     "HistoryPoint",
     "Optimiser",
-    "Optimizer"
+    "Optimizer",
+    "ExhaustedSearchSpaceError"
 ]
 
 
@@ -125,6 +126,10 @@ class Optimiser:
     def reset(self):
         """Reset the optimiser to the initial state."""
         self._history.clear()
+
+
+class ExhaustedSearchSpaceError(Exception):
+    pass
 
 
 Optimizer = Optimiser

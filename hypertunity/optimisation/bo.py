@@ -7,9 +7,11 @@ import GPy
 import GPyOpt
 import numpy as np
 
+from GPyOpt.core import errors as gpyopt_err
+
 from hypertunity import utils
 from hypertunity.domain import Domain, Sample
-from hypertunity.optimisation.base import Optimiser, EvaluationScore
+from hypertunity.optimisation.base import Optimiser, EvaluationScore, ExhaustedSearchSpaceError
 
 __all__ = [
     "BayesianOptimisation",
@@ -162,9 +164,11 @@ class BayesianOptimisation(Optimiser):
             kernel: `GPy.Kern` object, the kernel used by the model.
             variance: float, the variance of the objective function.
 
-
         Returns:
             A list of `batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
+
+        Raises:
+            :class:`ExhaustedSearchSpaceError`: if the domain is discrete and gets exhausted.
         """
         if self.__is_empty_data:
             next_samples = [self.domain.sample() for _ in range(batch_size)]
@@ -206,7 +210,10 @@ class BayesianOptimisation(Optimiser):
                 initial_design_numdata=len(self._data_x),
                 batch_size=batch_size,
                 **default_kwargs)
-            gpyopt_samples = bo.suggest_next_locations()
+            try:
+                gpyopt_samples = bo.suggest_next_locations()
+            except gpyopt_err.FullyExploredOptimizationDomainError as err:
+                raise ExhaustedSearchSpaceError from err
             next_samples = [self._convert_from_gpyopt_sample(s) for s in gpyopt_samples]
         return next_samples
 

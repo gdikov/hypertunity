@@ -3,16 +3,11 @@
 from typing import List
 
 from hypertunity.domain import Domain, Sample, DomainNotIterableError
-from hypertunity.optimisation.base import Optimiser
+from hypertunity.optimisation.base import Optimiser, ExhaustedSearchSpaceError
 
 __all__ = [
-    "GridSearch",
-    "ExhaustedSearchSpaceError"
+    "GridSearch"
 ]
-
-
-class ExhaustedSearchSpaceError(Exception):
-    pass
 
 
 class GridSearch(Optimiser):
