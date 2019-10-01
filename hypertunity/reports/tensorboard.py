@@ -72,7 +72,7 @@ class Tensorboard(Reporter):
             joined_name = utils.join_strings(var_name, join_char="/")
             if dim_type == Domain.Continuous:
                 hp_dim_type = hp.RealInterval
-                vals = dim
+                vals = list(map(float, dim))
             elif dim_type in [Domain.Discrete, Domain.Categorical]:
                 hp_dim_type = hp.Discrete
                 vals = (dim,)
