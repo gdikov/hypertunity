@@ -10,14 +10,15 @@ from . import _common as test_utils
 
 
 def test_bo_update_and_reset():
-    domain = Domain({"a": {"b": [2, 3]}, "c": [0, 0.1]})
+    domain = Domain({"a": {"b": [2, 3], "d": {"f": [3, 4]}}, "c": [0, 0.1]})
     bayes_opt = bo.BayesianOptimisation(domain, seed=7)
-    samples = bayes_opt.run_step(batch_size=1, minimise=False)
+    samples = []
     n_reps = 3
     for i in range(n_reps):
-        bayes_opt.update(samples[0], base.EvaluationScore(2. * i), )
+        samples.extend(bayes_opt.run_step(batch_size=1, minimise=False))
+        bayes_opt.update(samples[-1], base.EvaluationScore(2. * i))
     assert len(bayes_opt._data_x) == n_reps and len(bayes_opt._data_fx) == n_reps
-    assert np.all(bayes_opt._data_x == np.tile(bayes_opt._convert_to_gpyopt_sample(samples[0]), (n_reps, 1)))
+    assert np.all(bayes_opt._data_x == np.array([bayes_opt._convert_to_gpyopt_sample(s) for s in samples]))
     assert np.all(bayes_opt._data_fx == 2. * np.arange(n_reps).reshape(n_reps, 1))
     bayes_opt.reset()
     assert len(bayes_opt.history) == 0

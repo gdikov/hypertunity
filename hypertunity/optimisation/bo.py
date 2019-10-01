@@ -19,6 +19,7 @@ __all__ = [
 GPyOptSample = TypeVar("GPyOptSample", List[List], np.ndarray)
 GPyOptDomain = List[Dict[str, Any]]
 GPyOptCategoricalValueMapper = Dict[str, Dict[Any, int]]
+GPyOptDiscreteTypeMapper = Dict[str, Dict[Any, type]]
 
 
 class BayesianOptimisation(Optimiser):
@@ -42,7 +43,8 @@ class BayesianOptimisation(Optimiser):
         np.random.seed(seed)
         domain = Domain(domain.as_dict(), seed=seed)
         super(BayesianOptimisation, self).__init__(domain)
-        self.gpyopt_domain, self._categorical_value_mapper = self._convert_to_gpyopt_domain(self.domain)
+        converted_and_mappers = self._convert_to_gpyopt_domain(self.domain)
+        self.gpyopt_domain, self._categorical_value_mapper, self._discrete_type_mapper = converted_and_mappers
         self._inv_categorical_value_mapper = {name: {v: k for k, v in mapping.items()}
                                               for name, mapping in self._categorical_value_mapper.items()}
         self._data_x = np.array([[]])
@@ -50,7 +52,9 @@ class BayesianOptimisation(Optimiser):
         self.__is_empty_data = True
 
     @staticmethod
-    def _convert_to_gpyopt_domain(orig_domain: Domain) -> Tuple[GPyOptDomain, GPyOptCategoricalValueMapper]:
+    def _convert_to_gpyopt_domain(orig_domain: Domain) -> Tuple[GPyOptDomain,
+                                                                GPyOptCategoricalValueMapper,
+                                                                GPyOptDiscreteTypeMapper]:
         """Convert a `Domain` type object to `GPyOptDomain`.
 
         Args:
@@ -66,6 +70,7 @@ class BayesianOptimisation(Optimiser):
         """
         gpyopt_domain = []
         value_mapper = {}
+        type_mapper = {}
         flat_domain = orig_domain.flatten()
         for names, vals in flat_domain.items():
             dim_name = utils.join_strings(names)
@@ -74,6 +79,7 @@ class BayesianOptimisation(Optimiser):
                 dim_type = BayesianOptimisation.CONTINUOUS_TYPE
             elif domain_type == Domain.Discrete:
                 dim_type = BayesianOptimisation.DISCRETE_TYPE
+                type_mapper[dim_name] = {v: type(v) for v in vals}
             elif domain_type == Domain.Categorical:
                 dim_type = BayesianOptimisation.CATEGORICAL_TYPE
                 value_mapper[dim_name] = {v: i for i, v in enumerate(vals)}
@@ -82,7 +88,7 @@ class BayesianOptimisation(Optimiser):
                 raise ValueError(f"Badly specified subdomain {names} with values {vals}.")
             gpyopt_domain.append({"name": dim_name, "type": dim_type, "domain": tuple(vals)})
         assert len(gpyopt_domain) == len(orig_domain), "Mismatching dimensionality after domain conversion."
-        return gpyopt_domain, value_mapper
+        return gpyopt_domain, value_mapper, type_mapper
 
     def _convert_to_gpyopt_sample(self, orig_sample: Sample) -> GPyOptSample:
         """Convert a sample of type `Sample` to type `GPyOptSample` and vice versa.
@@ -126,10 +132,13 @@ class BayesianOptimisation(Optimiser):
             names = utils.split_string(dim["name"])
             sub_dim = orig_sample
             for name in names[:-1]:
-                sub_dim[name] = {}
+                if name not in sub_dim:
+                    sub_dim[name] = {}
                 sub_dim = sub_dim[name]
             if dim["type"] == BayesianOptimisation.CATEGORICAL_TYPE:
                 sub_dim[names[-1]] = self._inv_categorical_value_mapper[dim["name"]][value]
+            elif dim["type"] == BayesianOptimisation.DISCRETE_TYPE:
+                sub_dim[names[-1]] = self._discrete_type_mapper[dim["name"]][value](value)
             else:
                 sub_dim[names[-1]] = value
         return Sample(orig_sample)
@@ -160,7 +169,7 @@ class BayesianOptimisation(Optimiser):
         if self.__is_empty_data:
             next_samples = [self.domain.sample() for _ in range(batch_size)]
         else:
-            assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise a BO method from empty data."
+            assert len(self._data_x) > 0 and len(self._data_fx) > 0, "Cannot initialise BO from empty data."
             default_kwargs = {
                 "num_cores": min(batch_size, cpu_count() - 1),
                 "normalize_Y": True,

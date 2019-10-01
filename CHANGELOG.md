@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## Fixed
+- bug in `BayesianOptimisation` sample conversion for nested dictionaries.
+- bug in `BayesianOptimisation` type preserving between the domain and the sample value.
+ 
 ## Changed
 - minor fixes in documentation typos and argument names.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
