@@ -107,7 +107,7 @@ class Trial:
         with self.scheduler(n_parallel=n_parallel) as scheduler:
             for i in range(n_steps):
                 samples = self.optimiser.run_step(batch_size=batch_size, minimise=kwargs.get("minimise", False))
-                jobs = [self._job(task=self.objective, args=(*s.as_namedtuple(),)) for s in samples]
+                jobs = [self._job(task=self.objective, args=s.as_dict()) for s in samples]
                 scheduler.dispatch(jobs)
                 evaluations = [r.data for r in scheduler.collect(n_results=batch_size, timeout=self._timeout)]
                 self.optimiser.update(samples, evaluations)

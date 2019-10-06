@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
 - rename `TableReporter` to `Table` and `TensorboardReporter` to `Tensorboard`.
 - `ExhaustedSearchSpaceError` is moved from `optimisation.exhastive` to `optimisation.base` module.
+- `Trial` running a task from a job is now done with dict as input keyword arguments or named command line arguments.
 
 ## Fixed
 - bug in `BayesianOptimisation` sample conversion for nested dictionaries.

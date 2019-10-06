@@ -36,7 +36,7 @@ def test_trial_with_callable():
 
 @pytest.mark.timeout(60.0)
 def test_trial_with_script():
-    domain = Domain({"x": {0, 1, 2, 3}, "y": [-1., 1.], "z": {"123", "abc"}})
+    domain = Domain({"--x": {0, 1, 2, 3}, "--y": [-1., 1.], "--z": {"123", "abc"}})
     trial = Trial(objective="hypertunity/scheduling/tests/script.py",
                   domain=domain,
                   optimiser="random_search",
@@ -48,7 +48,7 @@ def test_trial_with_script():
     rs = RandomSearch(domain=domain, seed=7)
     samples = rs.run_step(batch_size=batch_size)
     jobs = [Job(task="hypertunity/scheduling/tests/script.py",
-                args=(*s.as_namedtuple(),),
+                args=s.as_dict(),
                 meta={"binary": "python"}) for s in samples]
     results = [r.data for r in run_jobs(jobs)]
     assert results == [h.metrics["score"].value for h in trial.optimiser.history]
