@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/gdikov/hypertunity/blob/documentation/compiled-docs/docs/_static/images/logo.svg" width="100%">
+  <img src="https://github.com/gdikov/hypertunity/blob/master/docs/_static/images/logo.svg" width="100%">
 </div>
 
 [![CircleCI](https://circleci.com/gh/gdikov/hypertunity/tree/master.svg?style=svg&circle-token=1e875efacfef7d74c4ae07321d6be6d8482a13b1)](https://circleci.com/gh/gdikov/hypertunity/tree/master)
