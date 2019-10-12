@@ -19,21 +19,21 @@ HistoryEntryType = Union[
 
 
 class Reporter:
-    """Abstract `Reporter` class for result visualisation."""
+    """Abstract class :class:`Reporter` for result visualisation."""
 
     def __init__(self, domain: Domain,
                  metrics: List[str],
                  primary_metric: str = "",
                  database_path: str = None):
-        """Initialise the base reporter.
+        """Initialise the base reporter with domain and metrics.
 
         Args:
-            domain: `Domain`, the domain to which all evaluated samples belong.
-            metrics: list of str, the names of the metrics.
-            primary_metric: str, optional primary metric from `metrics`.
-                This is used by the `format` method to determine the sorting column and the best value.
-                Default is the first one.
-            database_path: str, the path to the database for storing experiment history on disk.
+            domain: A :class:`Domain` from which all evaluated samples are drawn.
+            metrics: :obj:`List[str]` with names of the metrics used during evaluation.
+            primary_metric: (optional) :obj:`str` primary metric from `metrics`.
+                This is used to determine the best sample. Defaults to the first one.
+            database_path: (optional) :obj:`str` path to the database for storing experiment history on disk.
+                Defaults to in-memory storage.
         """
         self.domain = domain
         if not metrics:
@@ -58,17 +58,21 @@ class Reporter:
 
     @property
     def database(self):
+        """Return the current database table."""
         return self._db_current_table
 
     def log(self, entry: HistoryEntryType, **kwargs: Any):
-        """Create an entry for an optimisation history point in the reporter.
+        """Create an entry for an optimisation history point in the :class:`Reporter`.
 
         Args:
-            entry: Can either be of type `HistoryPoint` or a tuple of `Sample` and [metric name] -> [results] dict.
-                In the latter case, a variance of the evaluation noise can be supplied by adding an entry in the dict
-                with the [metric name] and a suffix '_var'.
+            entry: :class:`HistoryPoint` or :obj:`Tuple[Sample, Dict]`.
+                The history point to log. If given as a tuple of :class:`Sample` instance and a mapping
+                from metric names to results, the variance of the evaluation noise can be supplied by adding
+                an entry in the dict with the metric name and the suffix '_var'.
+            **kwargs: (optional) :obj:`Any`. Additional arguments for the logging implementation in a subclass.
+
         Keyword Args:
-            meta: Any, optional additional information to be logged in the database for this entry.
+            meta: (optional) additional information to be logged in the database for this entry.
         """
         if isinstance(entry, Tuple):
             log_fn = self._log_tuple
@@ -80,8 +84,8 @@ class Reporter:
         log_fn(entry, **kwargs)
 
     def _log_tuple(self, entry: Tuple, **kwargs):
-        """Helper function to convert the history entry from tuple to `HistoryPoint` and
-        then log it using the overridden method `_log_history_point`.
+        """Helper function to convert the history entry from tuple to :class:`HistoryPoint` and then log it using
+        the overridden method :method:`_log_history_point`.
         """
         if not (len(entry) == 2 and isinstance(entry[0], Sample)
                 and isinstance(entry[1], (Dict, EvaluationScore, float))):
@@ -110,10 +114,12 @@ class Reporter:
 
     @abc.abstractmethod
     def _log_history_point(self, entry: HistoryPoint, **kwargs: Any):
-        """Abstract method to override. Log the `HistoryPoint` type entry into the reporter.
+        """Abstract method to override.
+
+        Log the :class:`HistoryPoint` entry into the reporter.
 
         Args:
-            entry: `HistoryPoint`, the sample and evaluation metrics to log.
+            entry: :class:`HistoryPoint`. The sample and evaluation metrics to log.
         """
         raise NotImplementedError
 
@@ -127,11 +133,12 @@ class Reporter:
         """Return the entry from the database which corresponds to the best scoring experiment.
 
         Args:
-            criterion: str or Callable, the function used to determine whether the highest or lowest score is
-                requested. If the evaluation metrics are more than one, then a custom `criteria` must be supplied.
+            criterion: :obj:`str` or :obj:`Callable`. The function used to determine whether the highest
+                or lowest score is requested. If several evaluation metrics are present, then a custom
+                `criterion` must be supplied.
 
         Returns:
-            The content of the database for the best experiment, as JSON object or `None` if the database is empty.
+            JSON object or `None` if the database is empty. The content of the database for the best experiment.
         """
         if not self._db_current_table:
             return None
@@ -163,7 +170,8 @@ class Reporter:
         """Load the reporter with data from an entry of evaluations.
 
         Args:
-            history: list of `HistoryPoint` or tuples, the sequence of evaluations comprised of samples and metrics.
+            history: :obj:`List[HistoryPoint]` or :obj:`Tuple`. The sequence of evaluations
+                comprised of samples and metrics.
         """
         for h in history:
             self.log(h)

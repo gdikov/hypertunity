@@ -12,7 +12,7 @@ from ..scheduler import Scheduler
 
 
 def square(sample: Sample) -> base.EvaluationScore:
-    return base.EvaluationScore(sample["x"] ** 2)
+    return base.EvaluationScore(sample["x"]**2)
 
 
 def run_jobs(jobs):

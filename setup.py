@@ -21,7 +21,8 @@ required_packages = [
 
 extras = {
     "tensorboard": ["tensorflow>=1.14.0", "tensorboard==1.14.0"],
-    "tests": ["pytest>=4.6.3", "pytest-timeout>=1.3.3"]
+    "tests": ["pytest>=4.6.3", "pytest-timeout>=1.3.3"],
+    "docs": ["sphinx>=2.2.0", "sphinx_rtd_theme>=0.4.3"]
 }
 
 classifiers = [

@@ -15,16 +15,21 @@ __all__ = [
 
 
 class Scheduler:
-    """A Scheduler using the locally available machine to run the jobs.
-    A job can either be a python callable functions or a python executable script.
-    It maintains a `Job` and `Result` queues. This class should be used as a context manager.
+    """A manager for parallel execution of jobs.
+
+    A job must be of type :class:`Job` which produces a :class:`Result` object upon successful completion.
+    The scheduler maintains a job and result queues.
+
+    Notes:
+        This class should be used as a context manager.
     """
 
     def __init__(self, n_parallel: int = None):
         """Setup the job and results queues.
 
         Args:
-            n_parallel: int, the number of jobs that can be run in parallel.
+            n_parallel: (optional) :obj:`int`. The number of jobs that can be run in parallel.
+                Defaults to `None` in which case all but one available CPUs will be used.
         """
         self._job_queue = mp.Queue()
         self._result_queue = mp.Queue()
@@ -39,7 +44,8 @@ class Scheduler:
         self._servant.start()
 
     def __del__(self):
-        """Clean up subprocess on object deletion.
+        """Clean up subprocesses on object deletion.
+
         Close the queues and join all subprocesses before the object is deleted.
         """
         if not self._is_queue_closed:
@@ -81,14 +87,16 @@ class Scheduler:
                     self._result_queue.put_nowait(res)
 
     def dispatch(self, jobs: List[Job]):
-        """Dispatch the jobs for parallel execution. This method is non-blocking.
+        """Dispatch the jobs for parallel execution.
+
+        This method is non-blocking.
 
         Args:
-            jobs: list of `Job`s to run.
+            jobs: :obj:`List[Job]`. A list of jobs to run whenever resources are available.
 
         Notes:
-            Although the jobs are scheduled to run immediately, the actual execution may take place later
-            if the job runner is occupied with older jobs.
+            Although the jobs are scheduled to run immediately, the actual execution may take place
+            after indefinite delay if the job runner is occupied with older jobs.
         """
         for job in jobs:
             self._job_queue.put_nowait(job)
@@ -97,20 +105,20 @@ class Scheduler:
         """Collect all the available results or wait until they become available.
 
         Args:
-            n_results: int, number of results to wait for. If n_results <= 0 then all available results
-                will be returned.
-            timeout: float, number of seconds to wait if no results are available and `n_results` > 0.
+            n_results: :obj:`int`, number of results to wait for.
+                If `n_results` ≤ 0 then all available results will be returned.
+            timeout: (optional) :obj:`float`, number of seconds to wait for results to appear.
                 If None (default) then it will wait until all `n_results` are collected.
 
         Returns:
-            A list of `Result` objects with length `n_results` at least.
+            A list of :class:`Result` objects with length `n_results` at least.
 
         Notes:
             If `n_results` is overestimated and timeout is None, then this method will hang forever.
             Therefore it is recommended that a timeout is set.
 
         Raises:
-            TimeoutError if more than `timeout` seconds elapse before a `Result` is collected.
+            :obj:`TimeoutError`: if more than `timeout` seconds elapse before a :class:`Result` is collected.
         """
         if n_results > 0:
             results = []

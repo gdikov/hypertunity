@@ -29,11 +29,9 @@ def reset_registry():
     """Reset the global job and result registries.
 
     Notes:
-        **It is intended to be used during testing only.**
-
-        This function should be used with care as it allows for jobs with repeating IDs to be created.
-        As a consequence, two or more `Result` objects might coexist end make the actual experiment outcome
-        ambiguous.
+        This function should be used with care as it will allow for jobs with repeating IDs to be created.
+        As a consequence, two or more :class:`Result` objects might coexist end make the actual experiment
+        outcome ambiguous.
     """
     global _ID_COUNTER
     _JOB_REGISTRY.clear()
@@ -52,8 +50,8 @@ def import_script(path):
     """Import a module or script by a given path.
 
     Args:
-        path: str, can be either a module import of the form [package.]*[module]
-            if the outer most package is in the PYTHONPATH, or a path to an arbitrary python script.
+        path: :obj:`str`, can be either a module import of the form [package.]*[module]
+            if the outer most package is in the `PYTHONPATH`, or a path to an arbitrary python script.
 
     Returns:
         The loaded python script as a module.
@@ -77,13 +75,13 @@ def run_command(cmd: List[str]) -> str:
     """Execute a command in the shell.
 
     Args:
-        cmd: list of str, the command with its arguments to execute.
+        cmd: :obj:`List[str]`. The command with its arguments to execute.
 
     Returns:
         The standard output of the command.
 
     Raises:
-        `OSError` if the standard error stream is not empty.
+        :obj:`OSError`: if the standard error stream is not empty.
     """
     ps = subprocess.run(args=cmd, capture_output=True)
     if ps.stderr:
@@ -175,16 +173,17 @@ def fetch_result(output_file, n_trials: int = 5, waiting_time: float = 1.0) -> A
 
 @dataclass(frozen=True)
 class Job:
-    """`Job` class defining an experiment as a runnable task.
+    """Default :class:`Job` class defining an experiment as a runnable task on the local machine.
 
     The job is defined by a callable function or a script task. In the case of the former the `args` will be passed
-    directly to it upon calling. Otherwise a `main` attribute will be run with the `args`. In both cases a
-    `Result` object should be returned.
+    directly to it upon calling. Otherwise either a module will be run as a scirpt with command line arguments
+    or a function, attribute of the module, will be called with the `args` as input.
+    In both cases a :class:`Result` object will be returned.
 
     Attributes:
-        id: int, the job identifier. Must be unique.
-        args: tuple of arguments for the callable function or script.
-        task: callable or str, a python function to run or a file path to a python script.
+        id: :obj:`int`. The job identifier. Must be unique.
+        args: :obj:`tuple` or :obj:`dict`. The arguments or keyword arguments for the callable function or script.
+        task: :obj:`Callable` or :obj:`str`, a python function to run or a file path to a python script.
     """
     task: Union[Callable, str]
     args: Union[Tuple, Dict] = ()
@@ -273,11 +272,13 @@ class SlurmJobState(enum.Enum):
 
 @dataclass(frozen=True)
 class SlurmJob(Job):
-    """A `Job` dataclass which redefines the behaviour when called.
-    Instead of running a function or a `main` of a script, it runs an 'sbatch' command in the shell.
+    """A :class:`Job` subclass to schedule tasks on Slurm.
+
+    Runs an 'sbatch' command in the shell with the script.
 
     Attributes:
-        output_file: str, optional path to the file where the executed script will dump the result file.
+        output_file: (optional) :obj:`str`. Path to the file where the executed script will dump the result file.
+            If none is provided, a temporary file will be created.
     """
 
     output_file: str = None
@@ -378,11 +379,13 @@ class SlurmJob(Job):
 
 @dataclass(frozen=True)
 class Result:
-    """`Result` of the executed `Job` sharing the same id as the job.
+    """A :class:`Result` class to store the output of the executed :class:`Job`.
+
+     It shares the same id as the job which generated it.
 
     Attributes:
-        id: int, the identifier of the `Result` object which corresponds to the job that has been run.
-        data: Any, the outcome of the experiment.
+        id: :obj:`int`. The identifier of the `Result` object which corresponds to the job that has been run.
+        data: :obj:`Any`. The output data of the job.
     """
     data: Any
     id: int

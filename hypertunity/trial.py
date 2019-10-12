@@ -31,15 +31,19 @@ class Trial:
                  reporter: ReporterTypes = "table",
                  device: str = "local",
                  **kwargs):
-        """Initialise the `Trial` experiment manager.
+        """Initialise the :class:`Trial` experiment manager.
 
         Args:
-            objective: Callable or str, the objective function or script to run.
-            domain: `Domain`, the domain of the objective function.
-            optimiser: `Optimiser` or str, the optimiser method for domain sampling.
-            reporter: `Reporter` or str, the reporting method for the results.
-            device: str, the host device running the evaluations. Can be 'local' or 'slurm'.
+            objective: :obj:`Callable` or :obj:`str`. The objective function or script to run.
+            domain: :class:`Domain`. The optimisation domain of the objective function.
+            optimiser: :class:`Optimiser` or :obj:`str`. The optimiser method for domain sampling.
+            reporter: :class:`Reporter` or :obj:`str`. The reporting method for the results.
+            device: :obj:`str`. The host device running the evaluations. Can be 'local' or 'slurm'.
             **kwargs: additional parameters for the optimiser, reporter and scheduler.
+
+        Keyword Args:
+            timeout: :obj:`float`. The number of seconds to wait for a :class:`Job` instance to finish.
+                Default is 259200 seconds, or approximately 3 days.
         """
         self.objective = objective
         self.domain = domain
@@ -90,17 +94,19 @@ class Trial:
         raise ValueError(f"Unknown device {device}. Select one from {{'local', 'slurm'}}.")
 
     def run(self, n_steps: int, n_parallel: int = 1, **kwargs):
-        """Run the optimisation and objective function evaluation for a given number of steps.
+        """Run the optimisation and objective function evaluation.
 
         Args:
-            n_steps: int, the total number of optimiser queries.
-            n_parallel: int, the number of jobs that can be scheduled at once.
-            **kwargs: additional keyword arguments for the optimisation, provided on the `run_step()` call.
+            n_steps: :obj:`int`. The total number of optimisation steps.
+            n_parallel: (optional) :obj:`int`. The number of jobs that can be scheduled at once.
+            **kwargs: additional keyword arguments for the optimisation, supplied to the :py:meth:`run_step` method
+                of the :class:`Optimiser` instance.
 
         Keyword Args:
-            batch_size: int, the number of samples that are proposed at once.
-            minimise: bool, if the optimiser is `BayesianOptimisation` then this flag tells whether the objective
-                function is being minimised or maximised.
+            batch_size: (optional) :obj:`int`. The number of samples that are suggested at once. Default is 1.
+            minimise: (optional) :obj:`bool`. If the optimiser is :class:`BayesianOptimisation` then this flag
+                tells whether the objective function is being minimised or maximised. Otherwise it has no effect.
+                Default is `False`.
         """
         batch_size = kwargs.get("batch_size", 1)
         n_parallel = min(n_parallel, batch_size)

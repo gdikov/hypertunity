@@ -30,7 +30,7 @@ else:
 
 
 class Tensorboard(Reporter):
-    """A `Reporter` subclass to visualise the results in Tensorboard.
+    """A :class:`Reporter` subclass to visualise the results in Tensorboard.
 
     It utilises Tensorboard's HParams plugin as a dashboard for the summary of the optimisation.
     This class prepares and creates entries with the scalar data of the experiment trials,
@@ -46,13 +46,14 @@ class Tensorboard(Reporter):
         """Initialise the TensorBoard reporter.
 
         Args:
-            domain: `Domain`, the domain to which all evaluated samples belong.
-            metrics: list of str, the names of the metrics.
-            logdir: str, path to a folder for storing the Tensorboard events.
-            primary_metric: str, optional primary metric from `metrics`.
-                This is used by the `format` method to determine the sorting column and the best value.
+            domain: :class:`Domain`. The domain to which all evaluated samples belong.
+            metrics: :obj:`List[str]`. The names of the metrics.
+            logdir: :obj:`str`. Path to a folder for storing the Tensorboard events.
+            primary_metric: (optional) :obj:`str`. Primary metric from `metrics`.
+                This is used by the :py:meth:`format` method to determine the sorting column and the best value.
                 Default is the first one.
-            database_path: str, the path to the database for storing experiment history on disk.
+            database_path: (optional) :obj:`str`. The path to the database for storing experiment history on disk.
+                Default is in-memory storage.
         """
         super(Tensorboard, self).__init__(domain, metrics, primary_metric, database_path)
         self._hparams_domain = self._convert_to_hparams_domain(self.domain)
@@ -113,13 +114,13 @@ class Tensorboard(Reporter):
             sess.run(fw.flush())
 
     def _log_history_point(self, entry: HistoryPoint, experiment_dir: str = None):
-        """Create an entry for a `HistoryPoint` in Tensorboard.
+        """Create an entry for a :class:`HistoryPoint` in Tensorboard.
 
         Args:
-            entry: `HistoryPoint`, the sample and evaluation metrics to log.
-            experiment_dir: str, the directory name where to store all experiment related data.
+            entry: :class:`HistoryPoint`. The sample and evaluation metrics to log.
+            experiment_dir: (optional) :obj:`str`. The directory name where to store all experiment related data.
                 It will be prefixed by the `logdir` path which is provided on initialisation
-                of the `Tensorboard`.
+                of the :class:`Tensorboard` object. Default is 'experiment_[number]'.
         """
         converted = self._convert_to_hparams_sample(entry.sample)
         if not experiment_dir:

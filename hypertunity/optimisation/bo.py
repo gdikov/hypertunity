@@ -25,22 +25,18 @@ GPyOptDiscreteTypeMapper = Dict[str, Dict[Any, type]]
 
 
 class BayesianOptimisation(Optimiser):
-    """Bayesian Optimiser using GPyOpt as a backend."""
+    """Bayesian Optimiser using `GPyOpt` as a backend."""
 
     CONTINUOUS_TYPE = "continuous"
     DISCRETE_TYPE = "discrete"
     CATEGORICAL_TYPE = "categorical"
 
     def __init__(self, domain, seed=None):
-        """Initialise the BO's domain and other options.
+        """Initialise the optimiser's domain.
 
         Args:
-            domain: `Domain` object defining the domain of the objective
-            seed: optional, int to seed the BO for reproducibility.
-
-        Notes:
-             No objective function is specified for the `GPyOpt.methods.BayesianOptimisation` object as the evaluation
-             is deferred to the user.
+            domain: :class:`Domain`. The domain of the objective function.
+            seed: (optional) :obj:`int`. The seed of the optimiser. Used for reproducibility purposes.
         """
         np.random.seed(seed)
         domain = Domain(domain.as_dict(), seed=seed)
@@ -57,15 +53,15 @@ class BayesianOptimisation(Optimiser):
     def _convert_to_gpyopt_domain(orig_domain: Domain) -> Tuple[GPyOptDomain,
                                                                 GPyOptCategoricalValueMapper,
                                                                 GPyOptDiscreteTypeMapper]:
-        """Convert a `Domain` type object to `GPyOptDomain`.
+        """Convert a :class:`Domain` type object to :obj:`GPyOptDomain`.
 
         Args:
-            orig_domain: `Domain` to convert.
+            orig_domain: :class:`Domain` to convert.
 
         Returns:
-            A tuple of the converted `GPyOptDomain` object and a value mapper to assign each categorical
+            A tuple of the converted :obj:`GPyOptDomain` object and a value mapper to assign each categorical
             value to an integer (0, 1, 2, 3 ...). This is done to abstract away the type of the categorical domain
-            from the GPyOpt internals and thus arbitrary types are supported.
+            from the `GPyOpt` internals and thus arbitrary types are supported.
 
         Notes:
             The categorical options must be hashable. This behaviour may change in the future.
@@ -93,16 +89,16 @@ class BayesianOptimisation(Optimiser):
         return gpyopt_domain, value_mapper, type_mapper
 
     def _convert_to_gpyopt_sample(self, orig_sample: Sample) -> GPyOptSample:
-        """Convert a sample of type `Sample` to type `GPyOptSample` and vice versa.
+        """Convert a sample of type :class:`Sample` to type :obj:`GPyOptSample` and vice versa.
 
-        If the function is supplied with a `GPyOptSample` type object it calls the dedicated function
+        If the function is supplied with a :obj:`GPyOptSample` type object it calls the dedicated function
         `self._convert_from_gpyopt_sample`.
 
         Args:
-            orig_sample: `Sample` type object to be converted.
+            orig_sample: :class:`Sample` type object to be converted.
 
         Returns:
-            A `GPyOptSample` type object with the same values as `orig_sample`.
+            A :obj:`GPyOptSample` type object with the same values as `orig_sample`.
         """
         gpyopt_sample = []
         # iterate in the order of the GPyOpt domain names
@@ -115,15 +111,15 @@ class BayesianOptimisation(Optimiser):
         return np.asarray(gpyopt_sample)
 
     def _convert_from_gpyopt_sample(self, gpyopt_sample: GPyOptSample) -> Sample:
-        """Convert `GPyOptSample` type object to the corresponding `Sample` type.
+        """Convert :obj:`GPyOptSample` type object to the corresponding :class:`Sample` type.
 
         This is a registered function for the `self._convert_sample` function dispatcher.
 
         Args:
-            gpyopt_sample: `GPyOptSample` object to be converted.
+            gpyopt_sample: :obj:`GPyOptSample` object to be converted.
 
         Returns:
-            A `Sample` type object with the same values as `gpyopt_sample`.
+            A :class:`Sample` type object with the same values as `gpyopt_sample`.
         """
         if len(self.gpyopt_domain) != len(gpyopt_sample):
             raise ValueError(f"Cannot convert sample with mismatching dimensionality. "
@@ -153,19 +149,19 @@ class BayesianOptimisation(Optimiser):
         (data point, evaluation score)-pair the GPs are built and the acquisition function computed and optimised.
 
         Args:
-            batch_size: int, the number of samples to suggest at once. If more than one,
-                there is no guarantee for optimality.
-            minimise: bool, whether the objective should be minimised
+            batch_size: (optional) :obj:`int`. The number of samples to suggest at once.
+                If larger than one, there is no guarantee for the optimality of the number of probes.
+            minimise: (optional) :obj:`bool`. Whether the objective should be minimised
             **kwargs: optional keyword arguments which will be passed to the
                 backend `GPyOpt.methods.BayesianOptimisation` optimiser.
 
         Keyword Args:
-            model: str or `GPy.Model` object, the surrogate model used by the backend optimiser.
-            kernel: `GPy.Kern` object, the kernel used by the model.
-            variance: float, the variance of the objective function.
+            model: :obj:`str` or :obj:`GPy.Model` object. The surrogate model used by the backend optimiser.
+            kernel: :obj:`GPy.Kern` object. The kernel used by the model.
+            variance: :obj:`float`. The variance of the objective function.
 
         Returns:
-            A list of `batch_size`-many `Sample`s from the domain at which the objective should be evaluated next.
+            A list of `batch_size`-many :class:`Sample` instances at which the objective should be evaluated next.
 
         Raises:
             :class:`ExhaustedSearchSpaceError`: if the domain is discrete and gets exhausted.
@@ -226,12 +222,12 @@ class BayesianOptimisation(Optimiser):
         a 'sparse_gp' is used to speed up computation.
 
         Args:
-            model: str or `GPy.Model`, the GP regression model.
-            kernel: `GPy.kern.Kern`, the kernel of the GP regression model.
-            variance: float, the variance of the evaluations (used only if supported by the model).
+            model: :obj:`str` or :obj:`GPy.Model`, the GP regression model.
+            kernel: :obj:`GPy.kern.Kern`, the kernel of the GP regression model.
+            variance: :obj:`float`, the variance of the evaluations (used only if supported by the model).
 
         Returns:
-            A `GPy.Model` instance.
+            A :obj:`GPy.Model` instance.
         """
         if isinstance(model, GPy.Model):
             return model
@@ -252,9 +248,10 @@ class BayesianOptimisation(Optimiser):
         """Update the surrogate model with the domain sample `x` and the function evaluation `fx`.
 
         Args:
-            x: `Sample`, one sample of the domain of the objective function.
-            fx: either a float, an `EvaluationScore` or a dict, mapping metric names to `EvaluationScore`s
-                of the objective at `x`.
+            x: class:`Sample`. One sample of the domain of the objective function.
+            fx: a :obj:`float`, an :class:`EvaluationScore` or a :obj:`dict`. The evaluation scores of the objective
+                evaluated at `x`. If given as :obj:`dict` then it must be a mapping from metric names to
+                :class:`EvaluationScore` or :obj:`float` results.
             **kwargs: unused by this model.
         """
         super(BayesianOptimisation, self).update(x, fx)

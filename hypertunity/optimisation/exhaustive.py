@@ -11,15 +11,17 @@ __all__ = [
 
 
 class GridSearch(Optimiser):
+    """Grid search pseudo-optimiser."""
+
     def __init__(self, domain: Domain, sample_continuous: bool = False, seed: int = None):
-        """Initialise the GridSearch optimiser from a discrete domain.
+        """Initialise the :class:`GridSearch` optimiser from a discrete domain.
 
         If the domain contains continuous subspaces, then they could be sampled if `sample_continuous` is enabled.
 
         Args:
-            domain: `Domain`, the domain to iterate over.
-            sample_continuous: bool, whether to sample the continuous subspaces of the domain.
-            seed: optional int, seed the sampling of the continuous subspace.
+            domain: :class:`Domain`. The domain to iterate over.
+            sample_continuous: (optional) :obj:`bool`. Whether to sample the continuous subspaces of the domain.
+            seed: (optional) :obj:`int`. Seed for the sampling of the continuous subspace if necessary.
         """
         if domain.is_continuous and not sample_continuous:
             raise DomainNotIterableError(
@@ -42,19 +44,18 @@ class GridSearch(Optimiser):
         """Get the next `batch_size` samples from the Cartesian-product walk over the domain.
 
         Args:
-            batch_size: int, the number of samples to suggest at once.
+            batch_size: (optional) :obj:`int`. The number of samples to suggest at once.
 
         Returns:
-            A list of `Sample`s from the domain.
+            A list of :class:`Sample` instances from the domain.
 
         Raises:
-            `ExhaustedSearchSpaceError` if the (discrete part of the) domain is fully exhausted and
-            no samples can be generated.
+            :class:`ExhaustedSearchSpaceError`: if the (discrete part of the) domain is fully exhausted and
+                no samples can be generated.
 
         Notes:
-            This method does not guarantee that the returned list of Samples will be of a `batch_size` length.
-            This is due to the fixed size of the domain. If it gets exhausted during batch generation,
-            the method will return the remaining samples to be evaluated.
+            This method does not guarantee that the returned list of :class:`Samples` will be of length `batch_size`.
+            This is due to the size of the domain and the fact that samples will not be repeated.
         """
         if self._is_exhausted:
             raise self.__exhausted_err

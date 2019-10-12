@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## Added
 - `BayesianOptimisation` raises `ExhaustedSearchSpaceError` if a discrete domain is exhausted.
 
+## Added
+- compiled documentation and logo.
+
 ## Changed
 - minor fixes in documentation typos and argument names.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.

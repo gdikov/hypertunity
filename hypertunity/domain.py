@@ -1,4 +1,4 @@
-"""Define the optimisation domain as a tweaked Python dictionary."""
+"""Definition of the optimisation domain and a sample."""
 
 import ast
 import copy
@@ -17,7 +17,10 @@ __all__ = [
 
 
 class _RecursiveDict:
-    """Helper base type for the `Domain` and `Sample` types implementing common logic."""
+    """Helper base class for the :class:`Domain` and :class:`Sample` classes.
+
+    It implements common logic for creation, representation, type conversion and serialisation.
+    """
 
     def __init__(self, dct):
         if isinstance(dct, dict):
@@ -53,7 +56,7 @@ class _RecursiveDict:
         return self._ndim
 
     def __getitem__(self, item):
-        """Return the item (possibly subdomain) for a given key.
+        """Return the item (possibly a subdomain) for a given key.
 
         Args:
             item: str of tuple of str. If the latter it will access nested structures with the next str in the tuple.
@@ -69,17 +72,17 @@ class _RecursiveDict:
             return sub_dict
 
     def __add__(self, other: '_RecursiveDict'):
-        """Merge self with the `other` RecursiveDict.
+        """Merge self with the `other` :class:`_RecursiveDict`.
 
         Args:
-            other: `_RecursiveDict`, the dict that will be merged into the current one.
+            other: :class:`_RecursiveDict`. The recursive dictionary that will be merged into the current one.
 
         Returns:
-            A new `_RecursiveDict` object consisting of the subdomains of both domains.
+            A new :class:`_RecursiveDict` object consisting of the subdomains of both domains.
             If the keys overlap and the subdomains are discrete or categorical, the values will be unified.
 
         Raises:
-            `ValueError` if same keys point to different values.
+            :obj:`ValueError`: if identical keys point to different values.
         """
         flattened_a = self.flatten()
         flattened_b = other.flatten()
@@ -93,34 +96,33 @@ class _RecursiveDict:
     def flatten(self):
         """Return the flattened version of the recursive dict, i.e. without nested dicts.
 
-        The keys of the nested subdomains are then appended in a tuple to create a new unique key and the key
-        of a flat subdomain is converted to a tuple with a single element.
+        The keys of the nested subdomains are collected in a tuple to create a new unique key. For the sake of type
+        consistency, the key of a non-nested subdomain is converted to a tuple with a single element.
         """
         return {keys: val for keys, val in _deepiter_dict(self._data)}
 
     def as_dict(self):
-        """Convert the recursive dict object from a `RecursiveDict` to Python dict type.
-        """
+        """Convert the recursive dict object from :class:`_RecursiveDict` to :obj:`dict` type."""
         return copy.deepcopy(self._data)
 
     @classmethod
     def from_list(cls, lst):
-        """Create a `_RecursiveDict` object from a list of tuples.
+        """Create a :class:`_RecursiveDict` object from a list of tuples.
 
         Args:
-            lst: list of tuples, each element is a pair of keys (tuple of strings) and the value.
+            lst: :obj:`List[Tuple]`. Each element is a pair of the keys (tuple of strings) and the value.
 
         Returns:
-            A `_RecursiveDict` object.
+            A :class:`_RecursiveDict` object.
 
         Raises:
-            `ValueError` if the list contains duplicating keys with different values.
+            :obj:`ValueError`: if the list contains duplicating keys with different values.
 
         Examples:
         ```python
-            >>> lst = [(("a", "b"), (2, 3, 4)), (("c",), [0, 0.1])]
+            >>> lst = [(("a", "b"), {2, 3, 4}), (("c",), [0, 0.1])]
             >>> _RecursiveDict.from_list(lst)
-            {"a": {"b": (2, 3, 4)}, "c": [0, 0.1]}
+            {"a": {"b": {2, 3, 4}}, "c": [0, 0.1]}
         ```
         """
         dct = {}
@@ -139,13 +141,13 @@ class _RecursiveDict:
         return cls(head)
 
     def serialise(self, filepath=None):
-        """Serialise the `_RecursiveDict` object to a file or a string (if `filepath` is not supplied)
+        """Serialise the :class:`_RecursiveDict` object to a file or a string if `filepath` is not supplied.
 
         Args:
-            filepath: optional filepath as str to dump the serialised `_RecursiveDict` object.
+            filepath: (optional) :obj:`str`. Filepath as to dump the serialised :class:`_RecursiveDict` object.
 
         Returns:
-            The bytes representing the serialised `_RecursiveDict` object.
+            The bytes representing the serialised :class:`_RecursiveDict` object.
         """
         serialised = pickle.dumps(self._data)
         if filepath is not None:
@@ -155,13 +157,13 @@ class _RecursiveDict:
 
     @classmethod
     def deserialise(cls, series):
-        """Deserialise a serialised `_RecursiveDict` object from a byte stream or file.
+        """Deserialise a serialised :class:`_RecursiveDict` object from a byte stream or file.
 
         Args:
-            series: str representing the serialised `_RecursiveDict` object or a filepath.
+            series: :obj:`str`. The serialised :class:`_RecursiveDict` object or a filepath to it.
 
         Returns:
-            A corresponding `_RecursiveDict` object.
+            A :class:`_RecursiveDict` object.
         """
         if not isinstance(series, (bytes, bytearray)) and os.path.isfile(series):
             with open(series, "rb") as fp:
@@ -169,19 +171,19 @@ class _RecursiveDict:
         return cls(pickle.loads(series))
 
     def as_namedtuple(self):
-        """Convert the domain object from a `_RecursiveDict` to a namedtuple type.
+        """Convert a :class:`_RecursiveDict` to a namedtuple type.
 
         Returns:
-            A Python namedtuple object with names the same as the keys of the `_RecursiveDict` dict. Nested domains
-            are accessed by successive attribute getters.
+            A Python namedtuple object with names the same as the keys of the :class:`_RecursiveDict` dict.
+            Nested dicts are accessed by successive attribute getters.
 
         Examples:
         ```python
-            >>> rd = _RecursiveDict({"a": {"b": [1, 2]}, "c": (1, 2, 3), "d": 2.})
+            >>> rd = _RecursiveDict({"a": {"b": [1, 2]}, "c": {1, 2, 3}, "d": 2.})
             >>> nt = rd.as_namedtuple()
             >>> nt.a.b
             [1, 2]
-            >>> nt.c == (1, 2, 3) and nt.d == 2.
+            >>> nt.c == {1, 2, 3} and nt.d == 2.
             True
         ```
         """
@@ -201,23 +203,23 @@ class _RecursiveDict:
 
 
 class Domain(_RecursiveDict):
-    """Define the optimisation domain which can be of continuous or discrete numeric nature or a set of
-    other categorical non-numeric values. It is represented as a Python dict object with the keys naming the
-    subdomains and the values defining the set of possible variable values. For continuous sets use lists: [min, max].
-    For discrete (categorical or numeric) sets use python sets, e.g. {1, 2, 5, -0.1} or {"1", "2"}.
+    """Defines the optimisation domain of the objective function. It can be a continuous interval or a discrete
+    set of numeric or non-numeric values. The latter is also designated as a categorical domain.
+    It is represented as a Python dict object with the keys naming the variables and the values defining
+    the set of allowed values.
+    A :class:`Domain` can also be recursively specified. That is, a key can name a subdomain represented
+    as a Python dict.
 
-    Notes:
-        Domains can be recursively specified, i.e. a key can be a name of a subdomain and the value---a Python dict.
+    For continuous sets use Python list to define an interval in the form [a, b], a < b.
+    For discrete sets use Python sets, e.g. {1, 2, 5, -0.1} or {"option_a", "option_b"}.
 
     Examples:
-        ```python
-        >>> three_dim_domain = {"x": {0, 1},
-        >>>                     "y": [-2.5, 3.5],
-        >>>                     "z": [-1, 2, 4]}
-        >>> nested_domain = {"discrete_subdomain": {"x": {1, 2, 3}, "y": {4, 5, 6}}
-        >>>                  "continuous_subdomain": {"x": [-4, 4], "y": [0, 1]}
-        >>>                  "categorical_options": {"opt1", "opt2"}}
-        ```
+        >>> simple_domain = {"x": {0, 1},
+        >>>                  "y": [-1, 1],
+        >>>                  "z": {-1, 2, 4}}
+        >>> nested_domain = {"discrete": {"x": {1, 2, 3}, "y": {4, 5, 6}}
+        >>>                  "continuous": {"x": [-4, 4], "y": [0, 1]}
+        >>>                  "categorical": {"opt1", "opt2"}}
     """
     # Domain types
     Continuous = 1
@@ -226,11 +228,11 @@ class Domain(_RecursiveDict):
     Invalid = 4
 
     def __init__(self, dct, seed=None):
-        """Initialise the domain object and compute cached properties.
+        """Initialise the :class:`Domain`.
 
         Args:
-            dct: dict object specifying the domain.
-            seed: optional, int to seed the randomised sampling.
+            dct: :obj:`dict`. The mapping of variable names to sets of allowed values.
+            seed: (optional) :obj:`int`. Seed for the randomised sampling.
         """
         super(Domain, self).__init__(dct)
         self._validate()
@@ -241,14 +243,12 @@ class Domain(_RecursiveDict):
                 self._is_continuous = True
 
     def __iter__(self):
-        """For discrete domains iterate over the Cartesian product of all 1-dim subdomains.
+        """Iterate over the domain if it is fully discrete.
+
+        The iterations are over the Cartesian product of all 1-dim discrete subdomains.
 
         Raises:
-            DomainNotIterableError in case of a continuous domain.
-
-        Notes:
-            All dimensions must be discrete (numeric or categorical).
-            Even if one dimension is continuous the iteration will raise an error.
+            :class:`DomainNotIterableError`: if the domain has a at least one continuous subdomain.
         """
         if self._is_continuous:
             raise DomainNotIterableError("The domain has a continuous subdomain and cannot be iterated.")
@@ -282,7 +282,7 @@ class Domain(_RecursiveDict):
         """Draw a sample from the domain. All subdomains are sampled uniformly.
 
         Returns:
-            A `Sample` object.
+            A :class:`Sample` object.
         """
 
         def sample_dict(dct):
@@ -305,8 +305,13 @@ class Domain(_RecursiveDict):
 
     @classmethod
     def get_type(cls, subdomain):
-        """Return the type of the set of values in a subdomain. Can be `Continuous`, `Discrete`, `Categorical` or
-        `Invalid` if none of the above.
+        """Return the type of the set of values in a subdomain.
+
+        Args:
+            subdomain: one of :obj:`dict`, :obj:`list` or :obj:`set`. The subdomain to get the type for.
+
+        Returns:
+            One of `Domain.Continuous`, `Domain.Discrete`, `Domain.Categorical` or `Domain.Invalid`.
         """
 
         def is_numeric(x):
@@ -325,7 +330,12 @@ class Domain(_RecursiveDict):
         return Domain.Invalid
 
     def split_by_type(self) -> Tuple['Domain', 'Domain', 'Domain']:
-        """Split the domain into discrete, categorical and continuous subdomains respectively."""
+        """Split the domain into discrete, categorical and continuous subdomains respectively.
+
+        Returns:
+            A tuple of three :class:`Domain` objects for the discrete numerical, categorical
+            and continuous subdomains.
+        """
         discrete, categorical, continuous = [], [], []
         for keys, vals in self.flatten().items():
             if Domain.get_type(vals) == Domain.Continuous:
@@ -340,29 +350,36 @@ class Domain(_RecursiveDict):
 
 
 class DomainNotIterableError(TypeError):
+    """Alias for the :obj:`TypeError` raised during iteration of (partially) continuous :class:`Domain` object."""
     pass
 
 
 class DomainSpecificationError(ValueError):
+    """Alias for the :obj:`ValueError` raised during :class:`Domain` object creation from an invalid set of values."""
     pass
 
 
 class Sample(_RecursiveDict):
-    """Define a sample from the optimisation domain.
+    """Defines a sample from the optimisation domain.
 
-    It has the same recursive structure, however each dimension is represented by one number in case of continuous
-    or discrete subdomains or an object for the categorical ones.
-    The keys correspond exactly to the keys of the respective domain.
+    It has the same recursive structure a :class:`Domain` object, however each dimension is represented by one
+    value only. The keys are exactly as the keys of the respective domain.
+
+    Examples:
+        >>> domain = Domain({"x": {"y": {0, 1, 2}}, "z": [3, 4]})
+        >>> domain.sample()
+        {'x': {'y': 0}, 'z': 3.1415926535897932}
     """
 
     def __init__(self, dct):
+        """Initialise the :class:`Sample` object from a dict."""
         super(Sample, self).__init__(dct)
 
     def __iter__(self):
-        """Iterate over the flattened domain.
+        """Iterate over all values in the sample.
 
         Yields:
-            A tuple of keys as a tuple of strings and a single value.
+            A tuple of keys and a single value, where the keys are a tuple of strings.
         """
         yield from self.flatten().items()
 
@@ -378,10 +395,8 @@ def _deepiter_dict(dct):
         Tuple of keys (itself a tuple) and the corresponding value.
 
     Examples:
-    ```python
         >>> list(_deepiter_dict({"a": {"b": 1, "c": 2}, "d": 3}))
         [(('a', 'b'), 1), (('a', 'c'), 2), (('d',), 3)]
-    ```
     """
 
     def chained_keys_iter(prefix_keys, dct_tmp):

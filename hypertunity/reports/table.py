@@ -15,21 +15,21 @@ __all__ = [
 
 
 class Table(Reporter):
-    """A `Reporter` subclass to print and store a formatted table of the results."""
+    """A :class:`Reporter` subclass to print and store a formatted table of the results."""
 
     def __init__(self, domain: Domain,
                  metrics: List[str],
                  primary_metric: str = "",
                  database_path: str = None):
-        """Initialise the table reporter.
+        """Initialise the table reporter with domain and metrics.
 
         Args:
-            domain: `Domain`, the domain to which all evaluated samples belong.
-            metrics: list of str, the names of the metrics.
-            primary_metric: str, optional primary metric from `metrics`.
-                This is used by the `format` method to determine the sorting column and the best value.
-                Default is the first one.
-            database_path: str, the path to the database for storing experiment history on disk.
+            domain: A :class:`Domain` from which all evaluated samples are drawn.
+            metrics: :obj:`List[str]` with names of the metrics used during evaluation.
+            primary_metric: (optional) :obj:`str` primary metric from `metrics`.
+                This is used to determine the best sample. Defaults to the first one.
+            database_path: (optional) :obj:`str` path to the database for storing experiment history on disk.
+                Defaults to in-memory storage.
         """
         super(Table, self).__init__(domain, metrics, primary_metric, database_path)
         self._table = bt.BeautifulTable()
@@ -38,6 +38,7 @@ class Table(Reporter):
         self._table.column_headers = ["No.", *dim_names, *self.metrics]
 
     def __str__(self):
+        """Return the string representation of the table."""
         return str(self._table)
 
     @property
@@ -46,10 +47,12 @@ class Table(Reporter):
         return np.array(self._table)
 
     def _log_history_point(self, entry: HistoryPoint, **kwargs: Any):
-        """Create an entry for a `HistoryPoint` in a table.
+        """Create an entry for a :class:`HistoryPoint` in the table.
 
         Args:
-            entry: `HistoryPoint`, the sample and evaluation metrics to log.
+            entry: :class:`HistoryPoint`. The history point to log. If given as a tuple of :class:`Sample`
+                instance and a mapping from metric names to results, the variance of the evaluation noise
+                can be supplied by adding an entry in the dict with the metric name and the suffix '_var'.
         """
         id_ = len(self._table)
         row = [id_ + 1, *entry.sample.flatten().values(), *entry.metrics.values()]
@@ -59,12 +62,16 @@ class Table(Reporter):
     def format(self, order: str = "none", emphasise: bool = False) -> str:
         """Format the table and return it as a string.
 
+        Supported formatting is sorting and emphasising of the best result.
+
         Args:
-            order: str, order of sorting by the primary metric. Can be "none", "ascending" or "descending".
-            emphasise: bool, whether to emphasise (mark yellow and blink if possible) the best experiment.
+            order: (optional) :obj:`str`. The order of sorting by the primary metric.
+                Can be "none", "ascending" or "descending". Defaults to "none".
+            emphasise: (optional) :obj:`bool`. Whether to emphasise the best experiment by marking it
+                in yellow and blinking if supported. Defaults to `False`.
 
         Returns:
-            The formatted table as a string.
+            :obj:`str` of the formatted table.
         """
         table_copy = self._table.copy()
         if order not in ["none", "descending", "ascending"]:

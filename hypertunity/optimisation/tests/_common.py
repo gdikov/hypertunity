@@ -23,7 +23,7 @@ def continuous_heteroscedastic_1d(x):
     """
     rng = np.random.RandomState(7)
     noise = rng.normal(0., 0.2 * np.abs(x) + 1e-7)
-    fx = np.atleast_1d(0.2 * x ** 4 - x ** 2 + 2 + noise)
+    fx = np.atleast_1d(0.2 * x**4 - x**2 + 2 + noise)
     fx[np.logical_and(x < -2., x > 2.)] = 0.
     return fx
 
@@ -44,7 +44,7 @@ def heterogeneous_3d(x, y, z):
     if y == "sin":
         return (continuous_1d(x) + z)[0]
     elif y == "sqr" and z in [0, 1, 2, 3]:
-        return x ** 2 - 3 * z
+        return x**2 - 3 * z
     else:
         raise ValueError("`y` can only be 'sin' or 'sqr' and z [0, 1, 2, 3].")
 

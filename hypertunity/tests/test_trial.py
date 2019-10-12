@@ -8,7 +8,7 @@ from hypertunity.scheduling.tests.test_scheduler import run_jobs
 
 
 def foo(x, y, z):
-    return x ** 2 + y ** 2 - z ** 3
+    return x**2 + y**2 - z**3
 
 
 @pytest.mark.timeout(60.0)

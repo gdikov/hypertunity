@@ -28,29 +28,31 @@ class EvaluationScore:
 
 @dataclass(frozen=True)
 class HistoryPoint:
-    """A tuple of a `Sample` at which the objective has been evaluated and the corresponding metrics.
-    The latter is a mapping of a metric name to an `EvaluationScore`.
+    """A tuple of a :class:`Sample` at which the objective has been evaluated and the corresponding metrics.
+    The metrics are supplied as :obj:`dict` mapping of a :obj:`str` metric name to an :class:`EvaluationScore`.
     """
     sample: Sample
     metrics: Dict[str, EvaluationScore]
 
 
 class Optimiser:
-    """Abstract `Optimiser` to be implemented by all subtypes in this package.
+    """Abstract class :class:`Optimiser` for all optimisers.
 
-    Every `Optimiser` can be run for one single step at a time using the `run_step` method.
-    Since the `Optimiser` does not perform the evaluation of the objective function but only
-    proposes values from its domain, evaluation history can be supplied via the `update` method.
-    The history can be forgotten and the `Optimiser` brought to the initial state via the `reset`
+    It must be implemented by all subclasses in this package.
+
+    Every :class:`Optimiser` instance can be run for one single step using the :py:meth:`run_step` method.
+    The :class:`Optimiser` does not perform the evaluation of the objective function but only
+    proposes values from its domain. Therefore an evaluation history must be supplied via the :py:meth`update` method.
+    The history can be erased and the :class:`Optimiser` brought to the initial state via the :py:meth:`reset` method.
     """
 
     DEFAULT_METRIC_NAME = "score"
 
     def __init__(self, domain: Domain):
-        """Initialise the base optimiser class with a domain and direction of optimisation.
+        """Initialise the optimiser with a domain.
 
         Args:
-            domain: `Domain`, the objective function's optimisation domain.
+            domain: :class:`Domain`. The objective function's optimisation domain.
         """
         self.domain = domain
         self._history: List[HistoryPoint] = []
@@ -64,34 +66,36 @@ class Optimiser:
     def history(self, history: List[HistoryPoint]):
         """Set the optimiser history.
 
+        This method can be used to warm-start an optimiser.
+
         Args:
-            history: list of `HistoryPoint`, the new history which will **overwrite** the old one.
+            history: :obj:`List[HistoryPoint]`. New history which will **overwrite** the old one.
         """
         self.reset()
         for hp in history:
             self.update(hp.sample, hp.metrics)
 
     @abc.abstractmethod
-    def run_step(self, batch_size: int = 1, *args: Any, **kwargs: Any) -> List[Sample]:
+    def run_step(self, batch_size, *args: Any, **kwargs: Any) -> List[Sample]:
         """Perform one step of optimisation and suggest the next sample to evaluate.
 
         Args:
-            batch_size: int, the number of samples to suggest at one step of `run_step`.
+            batch_size: (optional) :obj:`int`. The number of samples to suggest at once.
             *args: optional arguments for the Optimiser.
             **kwargs: optional keyword arguments for the Optimiser.
 
         Returns:
-            A list of `Sample` type objects corresponding to the `self.domain` domain with
-            suggested locations to evaluate. Can be more than one if the optimiser supports batched sampling.
+            A :obj:`List[Sample]` with the suggested samples to evaluate.
         """
         raise NotImplementedError
 
     def update(self, x, fx, **kwargs):
-        """Update the optimiser's history track.
+        """Update the optimiser's history with new points.
 
         Args:
-            x: `Sample`, one sample of the domain of the objective function.
-            fx: `EvaluationScore`, the evaluation score of the objective at `x`.
+            x: :class:`Sample` or :obj:`List[Sample]`. The samples at which the objective function has been evaluated.
+            fx: :class:`EvaluationScore` or :obj:`List[EvaluationScore]`. The evaluation scores at the
+                corresponding samples.
         """
         if isinstance(x, Sample):
             self._update_history(x, fx)

@@ -1,5 +1,6 @@
-# Hypertunity
-A toolset for black-box hyperparameter optimisation.
+<div align="center">
+  <img src="https://github.com/gdikov/hypertunity/blob/documentation/compiled-docs/docs/_static/images/logo.svg" width="100%">
+</div>
 
 [![CircleCI](https://circleci.com/gh/gdikov/hypertunity/tree/master.svg?style=svg&circle-token=1e875efacfef7d74c4ae07321d6be6d8482a13b1)](https://circleci.com/gh/gdikov/hypertunity/tree/master)
 
@@ -16,46 +17,46 @@ For the full set of features refer to the [documentation](tbd).
 
 ## Quick start
 
-A central object is the `Domain` defining the space of valid values for an objective function.
-A `Sample` is one realisation from the `Domain`, which supplied to the objective function results in a score.
+Define the objective function to optimise. For example, it can take the hyperparameters `params` as input and 
+return a raw value `score` as output:
 
-Define a wrapper around an expensive objective function:
 ```python
 import hypertunity as ht
 
-def foo(x: ht.Sample) -> float:
+def foo(**params) -> float:
     # do some very costly computations
     ...
     return score
 ```
-Define the valid ranges of values for `foo`:
+
+To define the valid ranges for the values of `params` we create a `Domain` object:
 
 ```python
-# define the optimisation domain
 domain = ht.Domain({
-    "x": [-5., 6.],           # continuous variable within the interval [-5., 6.]
+    "x": [-10., 10.],         # continuous variable within the interval [-10., 10.]
     "y": {"opt1", "opt2"},    # categorical variable from the set {"opt1", "opt2"}
     "z": set(range(4))        # discrete variable from the set {0, 1, 2, 3}
 })
 ```
 
-Set up the optimiser:
+Then we set up the optimiser:
 
 ```python
 bo = ht.BayesianOptimisation(domain=domain)
 ```
 
-Run the optimisation for 10 steps, while updating the optimiser:
+And we run the optimisation for 10 steps. Each result is used to update the optimiser so that informed domain 
+samples are drawn:
 
 ```python
 n_steps = 10
 for i in range(n_steps):
-    samples = bo.run_step(batch_size=2, minimise=True)  # suggest next samples
-    evaluations = [foo(s) for s in samples]             # evaluate foo
-    bo.update(samples, evaluations)                     # update the optimiser
+    samples = bo.run_step(batch_size=2, minimise=True)      # suggest next samples
+    evaluations = [foo(**s.as_dict()) for s in samples]     # evaluate foo
+    bo.update(samples, evaluations)                         # update the optimiser
 ```
 
-Finally, visualise the results in Tensorboard: 
+Finally, we visualise the results in Tensorboard: 
 
 ```python
 import hypertunity.reports.tensorboard as tb
