@@ -1,13 +1,15 @@
 import os
 import sys
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 try:
     import tensorflow as tf
     from tensorboard.plugins.hparams import api as hp
 except ImportError as err:
-    raise ImportError("Install TensorFlow>=1.14 and tensorboard>=1.14 "
+    raise ImportError("Install tensorflow>=1.14 and tensorboard>=1.14 "
                       "to support the HParams plugin.") from err
+
+import tinydb
 
 from hypertunity.domain import Domain, Sample
 from hypertunity.optimisation.base import HistoryPoint
@@ -131,3 +133,19 @@ class Tensorboard(Reporter):
             self._log_tf_eager_mode(converted, entry.metrics, full_experiment_dir)
         else:
             self._log_tf_graph_mode(converted, entry.metrics, full_experiment_dir)
+
+    def from_database(self, database: Union[str, tinydb.TinyDB], table: str = None):
+        """Load history from a database supplied as a path to a file or a :obj:`tinydb.TinyDB` object.
+
+        Args:
+            database: :obj:`str` or :obj:`tinydb.TinyDB`. The database to load.
+            table: (optional) :obj:`str`. The table to load from the database. This argument is not required
+                if the database has only one table.
+
+        Raises:
+            :class:`ValueError`: if the database contains more than one table and `table` is not given.
+        """
+        super(Tensorboard, self).from_database(database, table)
+        for doc in self._db_default_table:
+            history_point = self._convert_doc_to_history(doc)
+            self._log_history_point(history_point)

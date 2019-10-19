@@ -45,7 +45,7 @@ class Reporter:
         else:
             self.primary_metric = primary_metric
 
-        table_name = f"trial_{datetime.datetime.now().isoformat()}"
+        self._default_table_name = f"trial_{datetime.datetime.now().isoformat()}"
         if database_path is not None:
             if not os.path.exists(database_path):
                 os.makedirs(database_path)
@@ -53,13 +53,19 @@ class Reporter:
             self._db = tinydb.TinyDB(db_path, sort_keys=True, indent=4, separators=(',', ': '))
         else:
             from tinydb.storages import MemoryStorage
-            self._db = tinydb.TinyDB(storage=MemoryStorage, default_table=table_name)
-        self._db_current_table = self._db.table(table_name)
+            self._db = tinydb.TinyDB(storage=MemoryStorage,
+                                     default_table=self._default_table_name)
+        self._db_default_table = self._db.table(self._default_table_name)
 
     @property
     def database(self):
-        """Return the current database table."""
-        return self._db_current_table
+        """Return the logging database."""
+        return self._db
+
+    @property
+    def default_database_table(self):
+        """Return the default database table name."""
+        return self._default_table_name
 
     def log(self, entry: HistoryEntryType, **kwargs: Any):
         """Create an entry for an optimisation history point in the :class:`Reporter`.
@@ -124,10 +130,10 @@ class Reporter:
         raise NotImplementedError
 
     def _add_to_db(self, entry: HistoryPoint, meta: Any = None):
-        document = _convert_history_to_doc(entry)
+        document = self._convert_history_to_doc(entry)
         if meta is not None:
             document["meta"] = meta
-        self._db_current_table.insert(document)
+        self._db_default_table.insert(document)
 
     def get_best(self, criterion: Union[str, Callable] = "max") -> Optional[Dict[str, Any]]:
         """Return the entry from the database which corresponds to the best scoring experiment.
@@ -140,7 +146,7 @@ class Reporter:
         Returns:
             JSON object or `None` if the database is empty. The content of the database for the best experiment.
         """
-        if not self._db_current_table:
+        if not self._db_default_table:
             return None
         if isinstance(criterion, str):
             predefined = {"max": max, "min": min}
@@ -156,9 +162,9 @@ class Reporter:
         return self._get_best_from_db(selection_fn)
 
     def _get_best_from_db(self, selection_fn: Callable):
-        best_entry = self._db_current_table.get(doc_id=1)
+        best_entry = self._db_default_table.get(doc_id=1)
         best_score = best_entry["metrics"][self.primary_metric]["value"]
-        for entry in self._db_current_table:
+        for entry in self._db_default_table:
             current_score = entry["metrics"][self.primary_metric]["value"]
             new_score = selection_fn(current_score, best_score)
             if new_score != best_score:
@@ -176,10 +182,63 @@ class Reporter:
         for h in history:
             self.log(h)
 
+    def from_database(self, database: Union[str, tinydb.TinyDB], table: str = None):
+        """Load history from a database supplied as a path to a file or a :obj:`tinydb.TinyDB` object.
 
-def _convert_history_to_doc(entry: HistoryPoint) -> Dict:
-    db_entry = {
-        "sample": entry.sample.as_dict(),
-        "metrics": {k: {"value": v.value, "variance": v.variance} for k, v in entry.metrics.items()}
-    }
-    return db_entry
+        Args:
+            database: :obj:`str` or :obj:`tinydb.TinyDB`. The database to load.
+            table: (optional) :obj:`str`. The table to load from the database. This argument is not required
+                if the database has only one table.
+
+        Raises:
+            :class:`ValueError`: if the database contains more than one table and `table` is not given.
+        """
+        if isinstance(database, str):
+            db = tinydb.TinyDB(database, sort_keys=True, indent=4, separators=(',', ': '))
+        elif isinstance(database, tinydb.TinyDB):
+            db = database
+        else:
+            raise TypeError("The database must be of type str or tinydb.TinyDB.")
+        if len(db.tables()) > 1 and table is None:
+            raise ValueError("Ambiguous database with multiple tables. Specify a table name.")
+        if table is None:
+            table = list(db.tables())[0]
+        self._db = db
+        self._db_default_table = self._db.table(table)
+
+    def to_history(self, table: str = None) -> List[HistoryPoint]:
+        """Export the reporter logged history from a database table to an optimiser-friendly history.
+
+        Args:
+            table: (optional) :obj:`str`. The name of the table to export. Defaults to the one created
+                during reporter initialisation.
+
+        Returns:
+            A list of :class:`HistoryPoint` objects which can be loaded into an :class:`Optimiser` instance.
+        """
+        history = []
+        if table is None:
+            default_table = self._db_default_table
+        else:
+            default_table = self._db.table(table)
+        for doc in default_table:
+            history.append(self._convert_doc_to_history(doc))
+        return history
+
+    @staticmethod
+    def _convert_history_to_doc(entry: HistoryPoint) -> Dict:
+        db_entry = {
+            "sample": entry.sample.as_dict(),
+            "metrics": {k: {
+                "value": v.value,
+                "variance": v.variance
+            } for k, v in entry.metrics.items()}
+        }
+        return db_entry
+
+    @staticmethod
+    def _convert_doc_to_history(document: Dict) -> HistoryPoint:
+        hist_point = HistoryPoint(sample=Sample(document["sample"]),
+                                  metrics={k: EvaluationScore(v["value"], v["variance"])
+                                           for k, v in document["metrics"].items()})
+        return hist_point

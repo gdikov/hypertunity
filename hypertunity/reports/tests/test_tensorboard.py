@@ -5,14 +5,16 @@ from ._common import generate_history
 from ..tensorboard import Tensorboard
 
 
-def test_from_history():
+def test_from_to_history():
     n_samples = 10
     history, domain = generate_history(n_samples)
     with tempfile.TemporaryDirectory() as tmp_dir:
-        Tensorboard(domain, metrics=["metric_1", "metric_2"], logdir=tmp_dir).from_history(history)
+        rep = Tensorboard(domain, metrics=["metric_1", "metric_2"], logdir=tmp_dir)
+        rep.from_history(history)
         assert len(os.listdir(tmp_dir)) == n_samples
         for root, dirs, files in os.walk(tmp_dir):
             assert all(map(lambda x: x.startswith("events.out.tfevents"), files))
+        assert rep.to_history() == history
 
 
 def test_from_tuple_and_history_point():

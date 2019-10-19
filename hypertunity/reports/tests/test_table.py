@@ -1,3 +1,4 @@
+import os
 import tempfile
 
 from hypertunity.optimisation.base import EvaluationScore
@@ -5,7 +6,7 @@ from ._common import generate_history
 from ..table import Table
 
 
-def test_from_history():
+def test_from_to_history():
     n_samples = 10
     history, domain = generate_history(n_samples)
     rep = Table(domain, metrics=["metric_1", "metric_2"], primary_metric="metric_1")
@@ -13,6 +14,7 @@ def test_from_history():
     data_history = [[i + 1, *list(h.sample.flatten().values()), *list(h.metrics.values())]
                     for i, h in enumerate(history)]
     assert rep.data.tolist() == data_history
+    assert rep.to_history() == history
 
 
 def test_from_tuple_and_history_point():
@@ -42,8 +44,16 @@ def test_database_and_get_best():
                 best_sample = hp.sample.as_dict()
                 best_score = hp.metrics["metric_1"].value
 
-        assert len(rep.database) == len(hist_points)
+        assert len(rep.database.table(rep.default_database_table)) == len(hist_points)
         best_entry = rep.get_best(criterion="max")
         assert best_entry["meta"] == best_meta
         assert best_entry["metrics"] == best_metrics
         assert best_entry["sample"] == best_sample
+
+        rep2 = Table(domain, metrics=["metric_1", "metric_2"])
+        rep2.from_database(rep.database, table=rep.default_database_table)
+        rep3 = Table(domain, metrics=["metric_1", "metric_2"])
+        rep3.from_database(os.path.join(db_dir, "db.json"), table=rep.default_database_table)
+
+        assert str(rep) == str(rep2) == str(rep3)
+        assert rep.get_best() == rep2.get_best() == rep3.get_best()

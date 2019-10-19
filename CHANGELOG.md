@@ -3,10 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ## Added
-- `BayesianOptimisation` raises `ExhaustedSearchSpaceError` if a discrete domain is exhausted.
-
-## Added
+- `Reporter` instance can be loaded with data from the database of another reporter using a `from_database()` method.
+- data from a `Reporter` instance can be exported into a `HistoryPoint` list to load into an optimiser.
 - compiled documentation and logo.
+- `BayesianOptimisation` raises `ExhaustedSearchSpaceError` if a discrete domain is exhausted.
 
 ## Changed
 - minor fixes in documentation typos and argument names.

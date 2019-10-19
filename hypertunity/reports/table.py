@@ -1,7 +1,8 @@
-from typing import List, Any
+from typing import List, Any, Union
 
 import beautifultable as bt
 import numpy as np
+import tinydb
 
 from hypertunity import utils
 from hypertunity.domain import Domain
@@ -83,3 +84,19 @@ class Table(Reporter):
             emphasised_best_row = map(lambda x: f"\033[33;5;7m{x}\033[0m", table_copy[best_row_ind])
             table_copy.update_row(best_row_ind, emphasised_best_row)
         return str(table_copy)
+
+    def from_database(self, database: Union[str, tinydb.TinyDB], table: str = None):
+        """Load history from a database supplied as a path to a file or a :obj:`tinydb.TinyDB` object.
+
+        Args:
+            database: :obj:`str` or :obj:`tinydb.TinyDB`. The database to load.
+            table: (optional) :obj:`str`. The table to load from the database. This argument is not required
+                if the database has only one table.
+
+        Raises:
+            :class:`ValueError`: if the database contains more than one table and `table` is not given.
+        """
+        super(Table, self).from_database(database, table)
+        for doc in self._db_default_table:
+            history_point = self._convert_doc_to_history(doc)
+            self._log_history_point(history_point)
