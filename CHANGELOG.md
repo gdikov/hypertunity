@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - `BayesianOptimisation` raises `ExhaustedSearchSpaceError` if a discrete domain is exhausted.
 
 ## Changed
-- minor fixes in documentation typos and argument names.
+- minor fixes in documentation typos, argument names and tests.
 - `Domain` is moved from `hypertunity.optimisation` to the `hypertunity` package.
 - rename `TableReporter` to `Table` and `TensorboardReporter` to `Tensorboard`.
 - `ExhaustedSearchSpaceError` is moved from `optimisation.exhastive` to `optimisation.base` module.
