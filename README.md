@@ -1,8 +1,10 @@
 <div align="center">
-  <img src="https://github.com/gdikov/hypertunity/blob/master/docs/_static/images/logo.svg" width="100%">
+  <img src="https://raw.githubusercontent.com/gdikov/hypertunity/master/docs/_static/images/logo.svg?sanitize=true" width="100%">
 </div>
 
-[![CircleCI](https://circleci.com/gh/gdikov/hypertunity/tree/master.svg?style=svg&circle-token=1e875efacfef7d74c4ae07321d6be6d8482a13b1)](https://circleci.com/gh/gdikov/hypertunity/tree/master)
+[![CircleCI](https://img.shields.io/circleci/build/github/gdikov/hypertunity)](https://circleci.com/gh/gdikov/hypertunity)
+[![Documentation Status](https://readthedocs.org/projects/hypertunity/badge/?version=latest)](https://hypertunity.readthedocs.io/en/latest/?badge=latest)
+![GitHub](https://img.shields.io/github/license/gdikov/hypertunity)
 
 ## Why Hypertunity
 
@@ -13,7 +15,7 @@ Among others, it supports:
  * real-time visualisation of results in [Tensorboard](https://www.tensorflow.org/tensorboard) 
  via the [HParams](https://www.tensorflow.org/tensorboard/r2/hyperparameter_tuning_with_hparams) plugin.
 
-For the full set of features refer to the [documentation](tbd).
+For the full set of features refer to the [documentation](https://hypertunity.readthedocs.io).
 
 ## Quick start
 
@@ -81,7 +83,18 @@ trial.run(n_steps, batch_size=2, n_parallel=2)
 
 ## Installation
 
-Checkout the latest master and install from source:
+### Using PyPI
+To install the base version run:
+```bash
+pip install hypertunity
+```
+To use the Tensorboard dashboard, build the docs or run the test suite you will need the following extras:
+```bash
+pip install hypertunity[tensorboard,docs,tests]
+```
+
+### From source
+Checkout the latest master and install locally:
 ```bash
 git clone https://github.com/gdikov/hypertunity.git
 cd hypertunity

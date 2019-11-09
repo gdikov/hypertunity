@@ -46,6 +46,7 @@ setup(
     url="https://github.com/gdikov/hypertunity",
     description="A toolset for distributed black-box hyperparameter optimisation.",
     long_description=readme,
+    long_description_content_type='text/markdown',
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     python_requires=">=3.6",
     install_requires=required_packages,

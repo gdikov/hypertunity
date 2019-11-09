@@ -100,5 +100,6 @@ html_context = {
 }
 
 html_logo = "_static/images/logo_inverted.svg"
+html_favicon = '_static/images/favicon.ico'
 
 github_url = "https://github.com/gdikov/hypertunity"
