@@ -4,4 +4,4 @@ from .reports import *
 from .scheduling import *
 from .trial import *
 
-__version__ = "1.0dev"
+__version__ = "1.0"
