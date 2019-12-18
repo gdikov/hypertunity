@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## Fixed
+- issue with running callables from script thanks to David Turner (https://github.com/gdikov/hypertunity/pull/43)
 
 ## [1.0.0] - 2019-11-10
 ## Added
