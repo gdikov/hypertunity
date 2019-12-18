@@ -110,7 +110,7 @@ def get_callable_from_script(script_path: str, func_name: str = "main") -> Calla
         module = import_script(script_path)
         if not hasattr(module, func_name):
             raise AttributeError(f"Cannot find {func_name} function in {script_path}.")
-        return module.main(*args)
+        return getattr(module, func_name)(*args)
 
     return wrapper
 
