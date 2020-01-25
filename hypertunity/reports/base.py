@@ -1,12 +1,12 @@
 import abc
 import datetime
 import os
-from typing import List, Any, Union, Tuple, Dict, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import tinydb
 
 from hypertunity.domain import Domain, Sample
-from hypertunity.optimisation.base import HistoryPoint, EvaluationScore
+from hypertunity.optimisation.base import EvaluationScore, HistoryPoint
 
 __all__ = [
     "Reporter"
@@ -29,11 +29,12 @@ class Reporter:
 
         Args:
             domain: A :class:`Domain` from which all evaluated samples are drawn.
-            metrics: :obj:`List[str]` with names of the metrics used during evaluation.
+            metrics: :obj:`List[str]` with names of the metrics used during
+                evaluation.
             primary_metric: (optional) :obj:`str` primary metric from `metrics`.
                 This is used to determine the best sample. Defaults to the first one.
-            database_path: (optional) :obj:`str` path to the database for storing experiment history on disk.
-                Defaults to in-memory storage.
+            database_path: (optional) :obj:`str` path to the database for
+                storing experiment history on disk. Defaults to in-memory storage.
         """
         self.domain = domain
         if not metrics:
@@ -50,7 +51,12 @@ class Reporter:
             if not os.path.exists(database_path):
                 os.makedirs(database_path)
             db_path = os.path.join(database_path, "db.json")
-            self._db = tinydb.TinyDB(db_path, sort_keys=True, indent=4, separators=(',', ': '))
+            self._db = tinydb.TinyDB(
+                db_path,
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': ')
+            )
         else:
             from tinydb.storages import MemoryStorage
             self._db = tinydb.TinyDB(storage=MemoryStorage,
@@ -68,17 +74,21 @@ class Reporter:
         return self._default_table_name
 
     def log(self, entry: HistoryEntryType, **kwargs: Any):
-        """Create an entry for an optimisation history point in the :class:`Reporter`.
+        """Create an entry for an optimisation history point in the
+        :class:`Reporter`.
 
         Args:
             entry: :class:`HistoryPoint` or :obj:`Tuple[Sample, Dict]`.
-                The history point to log. If given as a tuple of :class:`Sample` instance and a mapping
-                from metric names to results, the variance of the evaluation noise can be supplied by adding
+                The history point to log. If given as a tuple of :class:`Sample`
+                instance and a mapping from metric names to results, the
+                variance of the evaluation noise can be supplied by adding
                 an entry in the dict with the metric name and the suffix '_var'.
-            **kwargs: (optional) :obj:`Any`. Additional arguments for the logging implementation in a subclass.
+            **kwargs: (optional) :obj:`Any`. Additional arguments for the
+                logging implementation in a subclass.
 
         Keyword Args:
-            meta: (optional) additional information to be logged in the database for this entry.
+            meta: (optional) additional information to be logged in the database
+                for this entry.
         """
         if isinstance(entry, Tuple):
             log_fn = self._log_tuple
@@ -86,12 +96,16 @@ class Reporter:
             self._add_to_db(entry, kwargs.pop("meta", None))
             log_fn = self._log_history_point
         else:
-            raise TypeError("The history point can be either a tuple or a `HistoryPoint` type object.")
+            raise TypeError(
+                "The history point can be either a tuple or a "
+                "`HistoryPoint` type object."
+            )
         log_fn(entry, **kwargs)
 
     def _log_tuple(self, entry: Tuple, **kwargs):
-        """Helper function to convert the history entry from tuple to :class:`HistoryPoint` and then log it using
-        the overridden method :method:`_log_history_point`.
+        """Helper function to convert the history entry from tuple to
+        :class:`HistoryPoint` and then log it using the overridden method
+        :method:`_log_history_point`.
         """
         if not (len(entry) == 2 and isinstance(entry[0], Sample)
                 and isinstance(entry[1], (Dict, EvaluationScore, float))):
@@ -107,13 +121,23 @@ class Reporter:
                 continue
             if name.endswith("_var"):
                 metric_name = name.rstrip("_var")
-                if metric_name not in metrics_obj or not isinstance(metrics_obj[metric_name], float):
-                    raise ValueError(f"Metrics dict does not contain a proper value for metric {metric_name}.")
-                metrics[metric_name] = EvaluationScore(value=metrics_obj[metric_name], variance=val)
+                if (metric_name not in metrics_obj
+                        or not isinstance(metrics_obj[metric_name], float)):
+                    raise ValueError(
+                        f"Metrics dict does not contain a proper value "
+                        f"for metric {metric_name}."
+                    )
+                metrics[metric_name] = EvaluationScore(
+                    value=metrics_obj[metric_name],
+                    variance=val
+                )
             elif isinstance(val, EvaluationScore):
                 metrics[name] = val
             elif isinstance(val, float):
-                metrics[name] = EvaluationScore(value=val, variance=metrics_obj.get(f"{name}_var", 0.0))
+                metrics[name] = EvaluationScore(
+                    value=val,
+                    variance=metrics_obj.get(f"{name}_var", 0.0)
+                )
         entry = HistoryPoint(sample=sample, metrics=metrics)
         self._add_to_db(entry, kwargs.pop("meta", None))
         self._log_history_point(entry, **kwargs)
@@ -136,24 +160,29 @@ class Reporter:
         self._db_default_table.insert(document)
 
     def get_best(self, criterion: Union[str, Callable] = "max") -> Optional[Dict[str, Any]]:
-        """Return the entry from the database which corresponds to the best scoring experiment.
+        """Return the entry from the database which corresponds to the best
+        scoring experiment.
 
         Args:
-            criterion: :obj:`str` or :obj:`Callable`. The function used to determine whether the highest
-                or lowest score is requested. If several evaluation metrics are present, then a custom
-                `criterion` must be supplied.
+            criterion: :obj:`str` or :obj:`Callable`. The function used to
+                determine whether the highest or lowest score is requested. If
+                several evaluation metrics are present, then a custom `criterion`
+                must be supplied.
 
         Returns:
-            JSON object or `None` if the database is empty. The content of the database for the best experiment.
+            JSON object or `None` if the database is empty. The content of the
+            database for the best experiment.
         """
         if not self._db_default_table:
             return None
         if isinstance(criterion, str):
             predefined = {"max": max, "min": min}
             if criterion not in predefined:
-                raise ValueError(f"Unknown criterion for finding best experiment. "
-                                 f"Select one from {list(predefined.keys())} "
-                                 f"or supply a custom function.")
+                raise ValueError(
+                    f"Unknown criterion for finding best experiment. "
+                    f"Select one from {list(predefined.keys())} "
+                    f"or supply a custom function."
+                )
             selection_fn = predefined[criterion]
         elif isinstance(criterion, Callable):
             selection_fn = criterion
@@ -176,22 +205,24 @@ class Reporter:
         """Load the reporter with data from an entry of evaluations.
 
         Args:
-            history: :obj:`List[HistoryPoint]` or :obj:`Tuple`. The sequence of evaluations
-                comprised of samples and metrics.
+            history: :obj:`List[HistoryPoint]` or :obj:`Tuple`. The sequence of
+                evaluations comprised of samples and metrics.
         """
         for h in history:
             self.log(h)
 
     def from_database(self, database: Union[str, tinydb.TinyDB], table: str = None):
-        """Load history from a database supplied as a path to a file or a :obj:`tinydb.TinyDB` object.
+        """Load history from a database supplied as a path to a file or a
+        :obj:`tinydb.TinyDB` object.
 
         Args:
             database: :obj:`str` or :obj:`tinydb.TinyDB`. The database to load.
-            table: (optional) :obj:`str`. The table to load from the database. This argument is not required
-                if the database has only one table.
+            table: (optional) :obj:`str`. The table to load from the database.
+                This argument is not required if the database has only one table.
 
         Raises:
-            :class:`ValueError`: if the database contains more than one table and `table` is not given.
+            :class:`ValueError`: if the database contains more than one table
+                and `table` is not given.
         """
         if isinstance(database, str):
             db = tinydb.TinyDB(database, sort_keys=True, indent=4, separators=(',', ': '))
@@ -200,21 +231,26 @@ class Reporter:
         else:
             raise TypeError("The database must be of type str or tinydb.TinyDB.")
         if len(db.tables()) > 1 and table is None:
-            raise ValueError("Ambiguous database with multiple tables. Specify a table name.")
+            raise ValueError(
+                "Ambiguous database with multiple tables. "
+                "Specify a table name."
+            )
         if table is None:
             table = list(db.tables())[0]
         self._db = db
         self._db_default_table = self._db.table(table)
 
     def to_history(self, table: str = None) -> List[HistoryPoint]:
-        """Export the reporter logged history from a database table to an optimiser-friendly history.
+        """Export the reporter logged history from a database table to an
+        optimiser-friendly history.
 
         Args:
-            table: (optional) :obj:`str`. The name of the table to export. Defaults to the one created
-                during reporter initialisation.
+            table: (optional) :obj:`str`. The name of the table to export.
+                Defaults to the one created during reporter initialisation.
 
         Returns:
-            A list of :class:`HistoryPoint` objects which can be loaded into an :class:`Optimiser` instance.
+            A list of :class:`HistoryPoint` objects which can be loaded into
+            an :class:`Optimiser` instance.
         """
         history = []
         if table is None:
@@ -238,7 +274,9 @@ class Reporter:
 
     @staticmethod
     def _convert_doc_to_history(document: Dict) -> HistoryPoint:
-        hist_point = HistoryPoint(sample=Sample(document["sample"]),
-                                  metrics={k: EvaluationScore(v["value"], v["variance"])
-                                           for k, v in document["metrics"].items()})
+        hist_point = HistoryPoint(
+            sample=Sample(document["sample"]),
+            metrics={k: EvaluationScore(v["value"], v["variance"])
+                     for k, v in document["metrics"].items()}
+        )
         return hist_point

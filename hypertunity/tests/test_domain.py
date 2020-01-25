@@ -2,7 +2,12 @@ from collections import namedtuple
 
 import pytest
 
-from hypertunity.domain import Domain, Sample, DomainNotIterableError, DomainSpecificationError
+from hypertunity.domain import (
+    Domain,
+    DomainNotIterableError,
+    DomainSpecificationError,
+    Sample
+)
 
 
 def test_valid():
@@ -33,7 +38,11 @@ def test_flatten():
 
 
 def test_addition():
-    domain_all = Domain({"a": [1, 2], "b": {"c": {1, 2, 3}, "d": {"o1", "o2"}}, "e": {3, 4, 5}})
+    domain_all = Domain({
+        "a": [1, 2],
+        "b": {"c": {1, 2, 3}, "d": {"o1", "o2"}},
+        "e": {3, 4, 5}
+    })
     domain_1 = Domain({"a": [1, 2], "b": {"c": {1, 2, 3}}})
     domain_2 = Domain({"b": {"d": {"o1", "o2"}}})
     domain_3 = Domain({"e": {3, 4, 5}})
@@ -64,8 +73,17 @@ def test_as_namedtuple():
 
 
 def test_from_list():
-    lst = [(("a", "b"), {2, 3, 4}), (("c",), {0, 0.1}), (("d", "e", "f"), {0, 1}), (("d", "g"), {2, 3})]
-    domain_true = Domain({"a": {"b": {2, 3, 4}}, "c": {0, 0.1}, "d": {"e": {"f": {0, 1}}, "g": {2, 3}}})
+    lst = [
+        (("a", "b"), {2, 3, 4}),
+        (("c",), {0, 0.1}),
+        (("d", "e", "f"), {0, 1}),
+        (("d", "g"), {2, 3})
+    ]
+    domain_true = Domain({
+        "a": {"b": {2, 3, 4}},
+        "c": {0, 0.1},
+        "d": {"e": {"f": {0, 1}}, "g": {2, 3}}
+    })
     domain_from_list = Domain.from_list(lst)
     assert domain_true == domain_from_list
     assert lst == list(domain_true.flatten().items())
@@ -74,7 +92,10 @@ def test_from_list():
 def test_iter():
     with pytest.raises(DomainNotIterableError):
         list(iter(Domain({"a": {"b": {2, 3, 4}}, "c": [0, 0.1]})))
-    discrete_domain = Domain({"a": {"b": {2, 3, 4}, "j": {"d": {5, 6}, "f": {"g": {7}}}}, "c": {"op1", 0.1}})
+    discrete_domain = Domain({
+        "a": {"b": {2, 3, 4}, "j": {"d": {5, 6}, "f": {"g": {7}}}},
+        "c": {"op1", 0.1}
+    })
     all_samples = set(iter(discrete_domain))
     assert all_samples == {
         Sample({'a': {'b': 2, 'j': {'d': 5, 'f': {'g': 7}}}, 'c': 'op1'}),

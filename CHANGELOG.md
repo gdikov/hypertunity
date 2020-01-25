@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## Changed
+- some code style related changes are applied, such as import sorting and line length shortening.
+
 ## Fixed
 - issue with running callables from script thanks to David Turner (https://github.com/gdikov/hypertunity/pull/43)
 

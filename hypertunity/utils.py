@@ -1,5 +1,4 @@
 import queue
-
 from functools import wraps
 
 GB_US_SPELLING = {
@@ -14,7 +13,8 @@ US_GB_SPELLING = {us: gb for gb, us in GB_US_SPELLING.items()}
 
 
 def support_american_spelling(func):
-    """Convert American spelling keyword arguments to British (default for hypertunity).
+    """Convert American spelling keyword arguments to British
+    (default for hypertunity).
 
     Args:
         func: a Python callable to decorate.
@@ -27,7 +27,8 @@ def support_american_spelling(func):
     # for more information see: https://github.com/sphinx-doc/sphinx/issues/3783
     @wraps(func)
     def british_spelling_func(*args, **kwargs):
-        gb_kwargs = {US_GB_SPELLING.get(kw, kw): val for kw, val in kwargs.items()}
+        gb_kwargs = {US_GB_SPELLING.get(kw, kw): val
+                     for kw, val in kwargs.items()}
         return func(*args, **gb_kwargs)
 
     return british_spelling_func
@@ -36,8 +37,9 @@ def support_american_spelling(func):
 def join_strings(strings, join_char="_"):
     """Join list of strings with an underscore.
 
-    The strings must contain string.printable characters only, otherwise an exception is raised.
-    If one of the strings has already an underscore, it will be replace by a null character.
+    The strings must contain string.printable characters only, otherwise an
+    exception is raised. If one of the strings has already an underscore, it
+    will be replace by a null character.
 
     Args:
         strings: iterable of strings.
@@ -58,13 +60,16 @@ def join_strings(strings, join_char="_"):
     all_cleaned = []
     for s in strings:
         if not s.isprintable():
-            raise ValueError("Encountered unexpected name containing non-printable characters.")
+            raise ValueError(
+                "Encountered unexpected name containing non-printable characters."
+            )
         all_cleaned.append(s.replace(join_char, "\0"))
     return join_char.join(all_cleaned)
 
 
 def split_string(joined, split_char="_"):
-    """Split joined string and substitute back the null characters with an underscore if necessary.
+    """Split joined string and substitute back the null characters with an
+    underscore if necessary.
 
     Inverse function of `join_strings(strings)`.
 
@@ -93,7 +98,8 @@ def drain_queue(q, close_queue=False):
 
     Args:
         q: `Queue`, the queue to drain.
-        close_queue: bool, whether to close the queue, such that no other object can be put in. Default is False.
+        close_queue: bool, whether to close the queue, such that no other
+        object can be put in. Default is False.
 
     Returns:
         List of all items from the queue.

@@ -1,6 +1,14 @@
 import os
 import sys
-from typing import List, Dict, Any, Union
+from typing import Any, Dict, List, Union
+
+import tinydb
+
+from hypertunity import utils
+from hypertunity.domain import Domain, Sample
+from hypertunity.optimisation.base import HistoryPoint
+
+from .base import Reporter
 
 try:
     import tensorflow as tf
@@ -9,13 +17,8 @@ except ImportError as err:
     raise ImportError("Install tensorflow>=1.14 and tensorboard>=1.14 "
                       "to support the HParams plugin.") from err
 
-import tinydb
 
-from hypertunity.domain import Domain, Sample
-from hypertunity.optimisation.base import HistoryPoint
-from hypertunity import utils
 
-from .base import Reporter
 
 __all__ = [
     "Tensorboard"
@@ -34,9 +37,10 @@ else:
 class Tensorboard(Reporter):
     """A :class:`Reporter` subclass to visualise the results in Tensorboard.
 
-    It utilises Tensorboard's HParams plugin as a dashboard for the summary of the optimisation.
-    This class prepares and creates entries with the scalar data of the experiment trials,
-    containing the domain sample and the corresponding metrics.
+    It utilises Tensorboard's HParams plugin as a dashboard for the summary of
+    the optimisation. This class prepares and creates entries with the scalar
+    data of the experiment trials, containing the domain sample and the
+    corresponding metrics.
 
     Notes:
         The user is responsible for launching TensorBoard in the browser.
@@ -52,12 +56,14 @@ class Tensorboard(Reporter):
             metrics: :obj:`List[str]`. The names of the metrics.
             logdir: :obj:`str`. Path to a folder for storing the Tensorboard events.
             primary_metric: (optional) :obj:`str`. Primary metric from `metrics`.
-                This is used by the :py:meth:`format` method to determine the sorting column and the best value.
-                Default is the first one.
-            database_path: (optional) :obj:`str`. The path to the database for storing experiment history on disk.
-                Default is in-memory storage.
+                This is used by the :py:meth:`format` method to determine the
+                sorting column and the best value. Default is the first one.
+            database_path: (optional) :obj:`str`. The path to the database for
+                storing experiment history on disk. Default is in-memory storage.
         """
-        super(Tensorboard, self).__init__(domain, metrics, primary_metric, database_path)
+        super(Tensorboard, self).__init__(
+            domain, metrics, primary_metric, database_path
+        )
         self._hparams_domain = self._convert_to_hparams_domain(self.domain)
         if not os.path.exists(logdir):
             os.makedirs(logdir)
@@ -80,7 +86,10 @@ class Tensorboard(Reporter):
                 hp_dim_type = hp.Discrete
                 vals = (dim,)
             else:
-                raise TypeError(f"Cannot map subdomain of type {dim_type} to a known HParams domain.")
+                raise TypeError(
+                    f"Cannot map subdomain of type {dim_type} "
+                    f"to a known HParams domain."
+                )
             hparams[joined_name] = hp.HParam(joined_name, hp_dim_type(*vals))
         return hparams
 
@@ -120,9 +129,10 @@ class Tensorboard(Reporter):
 
         Args:
             entry: :class:`HistoryPoint`. The sample and evaluation metrics to log.
-            experiment_dir: (optional) :obj:`str`. The directory name where to store all experiment related data.
-                It will be prefixed by the `logdir` path which is provided on initialisation
-                of the :class:`Tensorboard` object. Default is 'experiment_[number]'.
+            experiment_dir: (optional) :obj:`str`. The directory name where to
+                store all experiment related data. It will be prefixed by the
+                `logdir` path which is provided on initialisation of the
+                :class:`Tensorboard` object. Default is 'experiment_[number]'.
         """
         converted = self._convert_to_hparams_sample(entry.sample)
         if not experiment_dir:
@@ -135,15 +145,17 @@ class Tensorboard(Reporter):
             self._log_tf_graph_mode(converted, entry.metrics, full_experiment_dir)
 
     def from_database(self, database: Union[str, tinydb.TinyDB], table: str = None):
-        """Load history from a database supplied as a path to a file or a :obj:`tinydb.TinyDB` object.
+        """Load history from a database supplied as a path to a file or a
+        :obj:`tinydb.TinyDB` object.
 
         Args:
             database: :obj:`str` or :obj:`tinydb.TinyDB`. The database to load.
-            table: (optional) :obj:`str`. The table to load from the database. This argument is not required
-                if the database has only one table.
+            table: (optional) :obj:`str`. The table to load from the database.
+                This argument is not required if the database has only one table.
 
         Raises:
-            :class:`ValueError`: if the database contains more than one table and `table` is not given.
+            :class:`ValueError`: if the database contains more than one table
+            and `table` is not given.
         """
         super(Tensorboard, self).from_database(database, table)
         for doc in self._db_default_table:

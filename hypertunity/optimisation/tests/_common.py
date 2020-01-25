@@ -63,7 +63,9 @@ def discrete_3d(x, y, z):
         y: int, discrete variable                           (-3, 2, 5)
         z: str, categorical variable                        ("small", "large")
     """
-    if x not in {1, 2, 3, 4} and y not in {-3, 2, 5} and z not in {"small", "large"}:
+    if (x not in {1, 2, 3, 4}
+            and y not in {-3, 2, 5}
+            and z not in {"small", "large"}):
         raise ValueError("Outside the allowed domain.")
     if z == "small":
         return 0.1 * x * y
@@ -92,7 +94,8 @@ def evaluate_heterogeneous_3d(opt, batch_size, n_steps):
     all_evaluations = []
     for i in range(n_steps):
         samples = opt.run_step(batch_size, minimise=False)
-        evaluations = [heterogeneous_3d(s["x"], s["y"], s["z"]) for s in samples]
+        evaluations = [heterogeneous_3d(s["x"], s["y"], s["z"])
+                       for s in samples]
         opt.update(samples, [EvaluationScore(ev) for ev in evaluations], )
         # gather the samples and evaluations for later assessment
         all_samples.extend([(s["x"], s["y"], s["z"]) for s in samples])

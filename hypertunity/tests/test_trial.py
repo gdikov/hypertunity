@@ -31,12 +31,18 @@ def test_trial_with_callable():
             rep.log(sample_eval)
 
     assert len(trial.optimiser.history) == n_steps * batch_size
-    assert str(rep.format(order="ascending")) == str(trial.reporter.format(order="ascending"))
+    assert str(rep.format(order="ascending")) == str(
+        trial.reporter.format(order="ascending")
+    )
 
 
 @pytest.mark.timeout(60.0)
 def test_trial_with_script():
-    domain = Domain({"--x": {0, 1, 2, 3}, "--y": [-1., 1.], "--z": {"123", "abc"}})
+    domain = Domain({
+        "--x": {0, 1, 2, 3},
+        "--y": [-1., 1.],
+        "--z": {"123", "abc"}
+    })
     trial = Trial(objective="hypertunity/scheduling/tests/script.py",
                   domain=domain,
                   optimiser="random_search",
@@ -51,4 +57,5 @@ def test_trial_with_script():
                 args=s.as_dict(),
                 meta={"binary": "python"}) for s in samples]
     results = [r.data for r in run_jobs(jobs)]
-    assert results == [h.metrics["score"].value for h in trial.optimiser.history]
+    assert results == [h.metrics["score"].value
+                       for h in trial.optimiser.history]

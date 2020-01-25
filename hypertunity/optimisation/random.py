@@ -18,7 +18,8 @@ class RandomSearch(Optimiser):
 
         Args:
             domain: :class:`Domain`. The domain of the objective function.
-                It will be sampled uniformly using the :py:meth:`sample()` method of the :class:`Domain`.
+                It will be sampled uniformly using the :py:meth:`sample()`
+                method of the :class:`Domain`.
             seed: (optional) :obj:`int`. The seed for the domain sampling.
         """
         if seed is not None:
@@ -29,7 +30,8 @@ class RandomSearch(Optimiser):
         """Sample uniformly the domain for `batch_size` number of times.
 
         Args:
-            batch_size: (optional) :obj:`int`. The number of samples to return at one step.
+            batch_size: (optional) :obj:`int`. The number of samples to return
+                at one step.
 
         Returns:
             A list of `batch_size` many :class:`Sample` instances.

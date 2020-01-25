@@ -9,15 +9,23 @@ def test_support_american_spelling():
     @utils.support_american_spelling
     def gb_spelling_func(minimise, optimise, maximise):
         return minimise, optimise, maximise
-
-    assert gb_spelling_func(minimise=True, optimise=1, maximise=None) == (True, 1, None)
-    assert gb_spelling_func(minimize=True, optimize=1, maximize=None) == (True, 1, None)
+    expected = (True, 1, None)
+    assert gb_spelling_func(minimise=True, optimise=1, maximise=None) == expected
+    assert gb_spelling_func(minimize=True, optimize=1, maximize=None) == expected
 
 
 def test_split_and_join_strings():
-    strings = [("vxc", "", "", "___"), ("_", "_", ""), ("asd",), ("asd", "dxcv")]
+    strings = [
+        ("vxc", "", "", "___"),
+        ("_", "_", ""),
+        ("asd",),
+        ("asd", "dxcv")
+    ]
     for s in strings:
-        assert s == utils.split_string(utils.join_strings(s, join_char="_"), split_char="_")
+        assert s == utils.split_string(
+            utils.join_strings(s, join_char="_"),
+            split_char="_"
+        )
     with pytest.raises(ValueError):
         utils.join_strings(["asd", "\\", "\n"])
 
