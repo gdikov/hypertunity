@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.0.1] - 2020-01-27
 ## Changed
 - some code style related changes are applied, such as import sorting and line length shortening.
 - refactoring in tests to use pytest parameterisation and fixtures.

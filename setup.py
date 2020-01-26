@@ -11,7 +11,7 @@ with open("README.md", "r", encoding="utf8") as f:
 required_packages = [
     "beautifultable>=0.7.0",
     "dataclasses;python_version<'3.7'",
-    "gpy==1.9.8",
+    "gpy>=1.9.8",
     "gpyopt==1.2.5",
     "joblib>=0.13.2",
     "matplotlib>=3.0",
