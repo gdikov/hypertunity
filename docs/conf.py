@@ -57,6 +57,7 @@ napoleon_use_keyword = True
 napoleon_use_rtype = True
 
 autodoc_typehints = 'none'
+autodoc_mock_imports = ['tensorflow', 'tensorboard']
 
 
 source_suffix = '.rst'
