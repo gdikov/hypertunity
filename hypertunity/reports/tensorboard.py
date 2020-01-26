@@ -18,15 +18,13 @@ except ImportError as err:
                       "to support the HParams plugin.") from err
 
 
-
-
 __all__ = [
     "Tensorboard"
 ]
 
 EAGER_MODE = tf.executing_eagerly()
 session_builder = tf.compat.v1.Session
-if tf.version.VERSION < "2.":
+if str(tf.version.VERSION) < "2.":
     summary_file_writer = tf.compat.v2.summary.create_file_writer
     summary_scalar = tf.compat.v2.summary.scalar
 else:
