@@ -4,30 +4,40 @@ import pytest
 
 from .. import utils
 
+try:
+    from contextlib import nullcontext
+except ImportError:
+    from contextlib import contextmanager
+
+    @contextmanager
+    def nullcontext():
+        yield
+
 
 def test_support_american_spelling():
+
     @utils.support_american_spelling
     def gb_spelling_func(minimise, optimise, maximise):
         return minimise, optimise, maximise
+
     expected = (True, 1, None)
     assert gb_spelling_func(minimise=True, optimise=1, maximise=None) == expected
     assert gb_spelling_func(minimize=True, optimize=1, maximize=None) == expected
 
 
-def test_split_and_join_strings():
-    strings = [
-        ("vxc", "", "", "___"),
-        ("_", "_", ""),
-        ("asd",),
-        ("asd", "dxcv")
-    ]
-    for s in strings:
-        assert s == utils.split_string(
-            utils.join_strings(s, join_char="_"),
+@pytest.mark.parametrize("test_input,expectation", [
+    (("vxc", "", "", "___"), nullcontext()),
+    (("_", "_", ""), nullcontext()),
+    (("asd",), nullcontext()),
+    (("asd", "dxcv"), nullcontext()),
+    (("asd", "\\", "\n"), pytest.raises(ValueError))
+])
+def test_split_and_join_strings(test_input, expectation):
+    with expectation:
+        assert test_input == utils.split_string(
+            utils.join_strings(test_input, join_char="_"),
             split_char="_"
         )
-    with pytest.raises(ValueError):
-        utils.join_strings(["asd", "\\", "\n"])
 
 
 def test_drain_queue():

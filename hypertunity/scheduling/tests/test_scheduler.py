@@ -11,6 +11,11 @@ from ..scheduler import Scheduler
 from . import script
 
 
+@pytest.fixture(scope="module")
+def shared_slurm_tmp_dir():
+    return "/tmp"
+
+
 def square(sample: Sample) -> base.EvaluationScore:
     return base.EvaluationScore(sample["x"]**2)
 
@@ -79,7 +84,7 @@ def test_local_from_fn():
 
 @pytest.mark.slurm
 @pytest.mark.timeout(60.0)
-def test_slurm_from_script():
+def test_slurm_from_script(shared_slurm_tmp_dir):
     domain = Domain({
         "x": {0, 1, 2, 3},
         "y": [-1., 1.],
@@ -89,9 +94,7 @@ def test_slurm_from_script():
     n_jobs = 4
     for i in range(n_jobs):
         sample = domain.sample()
-        # NOTE: this test might fail if /tmp is not shared in the slurm cluster.
-        #  Adding the argument dir="/path/to/shared/dir" can fix that
-        dirs.append(tempfile.TemporaryDirectory())
+        dirs.append(tempfile.TemporaryDirectory(dir=shared_slurm_tmp_dir))
         jobs.append(SlurmJob(
             task="hypertunity/scheduling/tests/script.py",
             args=(*sample.as_namedtuple(),),

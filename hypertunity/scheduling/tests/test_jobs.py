@@ -11,7 +11,7 @@ def test_repeating_id():
 
 
 def test_callable_job():
-    for args in [(1, 2), (-4, 2), (131212, 123123123)]:
-        job = Job(task=lambda x, y: x + y, args=args)
-        result = job()
-        assert result.data == sum(args)
+    job_args = (131212, 123123123)
+    job = Job(task=lambda x, y: x + y, args=job_args)
+    result = job()
+    assert result.data == sum(job_args)

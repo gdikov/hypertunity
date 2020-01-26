@@ -4,26 +4,27 @@ import tempfile
 from hypertunity.optimisation.base import EvaluationScore
 
 from ..table import Table
-from ._common import generate_history
 
 
-def test_from_to_history():
-    n_samples = 10
-    history, domain = generate_history(n_samples)
+def test_from_to_history(generated_history):
+    history, domain = generated_history
     rep = Table(
         domain,
         metrics=["metric_1", "metric_2"],
         primary_metric="metric_1"
     )
     rep.from_history(history)
-    data_history = [[i + 1, *list(h.sample.flatten().values()), *list(h.metrics.values())]
-                    for i, h in enumerate(history)]
+    data_history = [
+        [i + 1, *list(h.sample.flatten().values()), *list(h.metrics.values())]
+        for i, h in enumerate(history)
+    ]
     assert rep.data.tolist() == data_history
     assert rep.to_history() == history
 
 
-def test_from_tuple_and_history_point():
-    hist_point, domain = generate_history(n_samples=1)
+def test_from_tuple_and_history_point(generated_history):
+    history, domain = generated_history
+    hist_point = history[0]
     rep = Table(
         domain,
         metrics=["metric_1", "metric_2"],
@@ -40,8 +41,8 @@ def test_from_tuple_and_history_point():
     ]
 
 
-def test_database_and_get_best():
-    hist_points, domain = generate_history(n_samples=10)
+def test_database_and_get_best(generated_history):
+    history, domain = generated_history
     with tempfile.TemporaryDirectory() as db_dir:
         rep = Table(
             domain,
@@ -50,7 +51,7 @@ def test_database_and_get_best():
         )
         best_meta, best_metrics, best_sample = {}, {}, {}
         best_score = float("-inf")
-        for i, hp in enumerate(hist_points):
+        for i, hp in enumerate(history):
             rep.log(hp, meta={"id": i})
             if hp.metrics["metric_1"].value > best_score:
                 best_meta = {"id": i}
@@ -59,7 +60,7 @@ def test_database_and_get_best():
                 best_sample = hp.sample.as_dict()
                 best_score = hp.metrics["metric_1"].value
 
-        assert len(rep.database.table(rep.default_database_table)) == len(hist_points)
+        assert len(rep.database.table(rep.default_database_table)) == len(history)
         best_entry = rep.get_best(criterion="max")
         assert best_entry["meta"] == best_meta
         assert best_entry["metrics"] == best_metrics

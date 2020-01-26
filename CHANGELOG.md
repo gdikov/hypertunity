@@ -4,9 +4,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ## Changed
 - some code style related changes are applied, such as import sorting and line length shortening.
+- refactoring in tests to use pytest parameterisation and fixtures.
 
 ## Fixed
-- issue with running callables from script thanks to David Turner (https://github.com/gdikov/hypertunity/pull/43)
+- issue with running callables from script thanks to David Turner (https://github.com/gdikov/hypertunity/pull/43).
+- issue with tensorflow version comparison in the tensorboard reporter.
 
 ## [1.0.0] - 2019-11-10
 ## Added

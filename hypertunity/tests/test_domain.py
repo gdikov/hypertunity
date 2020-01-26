@@ -10,20 +10,28 @@ from hypertunity.domain import (
 )
 
 
-def test_valid():
-    with pytest.raises(TypeError):
-        Domain({{"b": lambda x: x}, [0, 0.1]})
-    with pytest.raises(DomainSpecificationError):
-        Domain({1: {"b": [2, 3]}, "c": [0, 0.1]})
-    with pytest.raises(DomainSpecificationError):
-        Domain({"a": {"b": (1, 2, 3, 4)}, "c": [0, 0.1]})
-    with pytest.raises(DomainSpecificationError):
-        Domain({"a": {"b": lambda x: x}, "c": [0, 0.1]})
-    with pytest.raises(ValueError):
-        # this one should fail from the ast.literal_eval parsing
-        Domain('{"a": {"b": lambda x: x}, "c": [0, 0.1]}')
-    Domain({"a": {"b": {0, 1}}, "c": [0, 0.1]})
-    Domain('{"a": {"b": {0, 1}}, "c": [0, 0.1]}')
+@pytest.mark.parametrize("domain,expectation", [
+    ({1: {"b": [2, 3]}, "c": [0, 0.1]},
+     pytest.raises(DomainSpecificationError)),
+    ({"a": {"b": (1, 2, 3, 4)}, "c": [0, 0.1]},
+     pytest.raises(DomainSpecificationError)),
+    ({"a": {"b": lambda x: x}, "c": [0, 0.1]},
+     pytest.raises(DomainSpecificationError)),
+    # this one should fail from the ast.literal_eval parsing
+    ('{"a": {"b": lambda x: x}, "c": [0, 0.1]}',
+     pytest.raises(ValueError))
+])
+def test_invalid_domain(domain, expectation):
+    with expectation:
+        Domain(domain)
+
+
+@pytest.mark.parametrize("domain", [
+    {"a": {"b": {0, 1}}, "c": [0, 0.1]},
+    '{"a": {"b": {0, 1}}, "c": [0, 0.1]}'
+])
+def test_valid_domain(domain):
+    Domain(domain)
 
 
 def test_eq():
@@ -33,8 +41,8 @@ def test_eq():
 
 
 def test_flatten():
-    dom = Domain({"a": {"b": [0, 1]}, "c": [0, 0.1]})
-    assert dom.flatten() == {("a", "b"): [0, 1], ("c",): [0, 0.1]}
+    dom = Domain({"a": {"b": [0, 1]}, "c": {0, 0.1}})
+    assert dom.flatten() == {("a", "b"): [0, 1], ("c",): {0, 0.1}}
 
 
 def test_addition():
@@ -89,9 +97,12 @@ def test_from_list():
     assert lst == list(domain_true.flatten().items())
 
 
-def test_iter():
+def test_fail_iter_cont_domain():
     with pytest.raises(DomainNotIterableError):
         list(iter(Domain({"a": {"b": {2, 3, 4}}, "c": [0, 0.1]})))
+
+
+def test_iter():
     discrete_domain = Domain({
         "a": {"b": {2, 3, 4}, "j": {"d": {5, 6}, "f": {"g": {7}}}},
         "c": {"op1", 0.1}
